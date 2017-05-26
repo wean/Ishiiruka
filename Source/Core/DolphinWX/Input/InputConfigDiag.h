@@ -29,6 +29,7 @@
 
 class DolphinSlider;
 class InputConfig;
+class UDPWrapper;
 class wxComboBox;
 class wxListBox;
 class wxStaticBitmap;
@@ -163,6 +164,17 @@ protected:
 	int m_configured_width = wxDefaultCoord;
 };
 
+class UDPConfigButton : public wxButton
+{
+	public:
+	UDPWrapper* const wrapper;
+		UDPConfigButton(wxWindow* const parent, UDPWrapper * udp)
+			: wxButton(parent, -1, _("Configure"), wxDefaultPosition)
+			, wrapper(udp)
+			{}
+		};
+
+
 class ControlGroupBox : public wxStaticBoxSizer
 {
 public:
@@ -209,6 +221,8 @@ public:
 	void DetectControl(wxCommandEvent& event);
 
 	void ConfigExtension(wxCommandEvent& event);
+
+	void ConfigUDPWii(wxCommandEvent& event);
 
 	void SetDevice(wxCommandEvent& event);
 

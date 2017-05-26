@@ -6,6 +6,8 @@
 
 #include "Core/HW/WiimoteEmu/Attachment/Attachment.h"
 
+class UDPWrapper;
+
 namespace WiimoteEmu
 {
 enum class NunchukGroup;
@@ -14,7 +16,7 @@ struct ExtensionReg;
 class Nunchuk : public Attachment
 {
 public:
-	Nunchuk(WiimoteEmu::ExtensionReg& _reg);
+	Nunchuk(UDPWrapper * wrp, WiimoteEmu::ExtensionReg& _reg);
 
 	void GetState(u8* const data) override;
 	bool IsButtonPressed() const override;
@@ -52,5 +54,7 @@ private:
 	AnalogStick* m_stick;
 
 	u8 m_shake_step[3];
+
+	UDPWrapper* const m_udpWrap;
 };
 }

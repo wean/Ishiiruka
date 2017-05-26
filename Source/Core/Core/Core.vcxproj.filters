@@ -769,15 +769,9 @@
     <ClCompile Include="IPC_HLE\WII_IPC_HLE_Device_usb_ven.cpp">
       <Filter>IPC HLE %28IOS/Starlet%29\USB</Filter>
     </ClCompile>
-    <ClCompile Include="PowerPC\SignatureDB\CSVSignatureDB.cpp">
-      <Filter>PowerPC\SignatureDB</Filter>
-    </ClCompile>
-    <ClCompile Include="PowerPC\SignatureDB\DSYSignatureDB.cpp">
-      <Filter>PowerPC\SignatureDB</Filter>
-    </ClCompile>
-    <ClCompile Include="PowerPC\SignatureDB\SignatureDB.cpp">
-      <Filter>PowerPC\SignatureDB</Filter>
-    </ClCompile>
+    <ClCompile Include="PowerPC\SignatureDB\CSVSignatureDB.cpp" />
+    <ClCompile Include="PowerPC\SignatureDB\DSYSignatureDB.cpp" />
+    <ClCompile Include="PowerPC\SignatureDB\SignatureDB.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BootManager.h" />
@@ -1336,14 +1330,11 @@
     <ClInclude Include="IPC_HLE\WII_IPC_HLE_Device_usb_ven.h">
       <Filter>IPC HLE %28IOS/Starlet%29\USB</Filter>
     </ClInclude>
-    <ClInclude Include="PowerPC\SignatureDB\CSVSignatureDB.h">
-      <Filter>PowerPC\SignatureDB</Filter>
-    </ClInclude>
-    <ClInclude Include="PowerPC\SignatureDB\DSYSignatureDB.h">
-      <Filter>PowerPC\SignatureDB</Filter>
-    </ClInclude>
-    <ClInclude Include="PowerPC\SignatureDB\SignatureDB.h">
-      <Filter>PowerPC\SignatureDB</Filter>
+    <ClInclude Include="PowerPC\SignatureDB\CSVSignatureDB.h" />
+    <ClInclude Include="PowerPC\SignatureDB\DSYSignatureDB.h" />
+    <ClInclude Include="PowerPC\SignatureDB\SignatureDB.h" />
+    <ClInclude Include="HW\WiimoteEmu\UDPTLayer.h">
+      <Filter>HW %28Flipper/Hollywood%29\Wiimote</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

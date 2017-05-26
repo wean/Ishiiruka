@@ -260,6 +260,7 @@
     <ClCompile Include="Input\MicButtonConfigDiag.cpp">
       <Filter>GUI\InputConfig</Filter>
     </ClCompile>
+    <ClCompile Include="UDPConfigDiag.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Main.h" />
@@ -479,6 +480,7 @@
     <ClInclude Include="Input\MicButtonConfigDiag.h">
       <Filter>GUI\InputConfig</Filter>
     </ClInclude>
+    <ClInclude Include="UDPConfigDiag.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />

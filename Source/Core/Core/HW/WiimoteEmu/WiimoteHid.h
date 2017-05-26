@@ -33,6 +33,8 @@ struct hid_packet
 
 // Source: http://wiibrew.org/wiki/Wiimote
 
+typedef u16 wm_core;
+
 union wm_buttons  // also just called "core data"
 {
 	u16 hex;

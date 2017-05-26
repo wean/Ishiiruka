@@ -49,6 +49,7 @@
 #include "DolphinWX/Input/DrumsInputConfigDiag.h"
 #include "DolphinWX/Input/GuitarInputConfigDiag.h"
 #include "DolphinWX/Input/InputConfigDiag.h"
+#include "DolphinWX/UDPConfigDiag.h"
 #include "DolphinWX/Input/NunchukInputConfigDiag.h"
 #include "DolphinWX/Input/TurntableInputConfigDiag.h"
 #include "DolphinWX/WxUtils.h"
@@ -58,7 +59,16 @@
 #include "InputCommon/ControllerInterface/ExpressionParser.h"
 #include "InputCommon/InputConfig.h"
 
+class UDPWrapper;
+
 using namespace ciface::ExpressionParser;
+
+void InputConfigDialog::ConfigUDPWii(wxCommandEvent &event)
+{
+	UDPWrapper* const wrp = ((UDPConfigButton*)event.GetEventObject())->wrapper;
+	UDPConfigDiag diag(this, wrp);
+	diag.ShowModal();
+}
 
 void InputConfigDialog::ConfigExtension(wxCommandEvent& event)
 {
@@ -1130,6 +1140,14 @@ ControlGroupBox::ControlGroupBox(ControllerEmu::ControlGroup* const group, wxWin
 		Add(configure_btn, 0, wxEXPAND | wxLEFT | wxRIGHT, space3);
 	}
 	break;
+	case GROUP_TYPE_UDPWII:
+	{
+		wxButton* const btn = new UDPConfigButton(parent, (UDPWrapper*)group);
+		btn->Bind(wxEVT_BUTTON, &InputConfigDialog::ConfigUDPWii, eventsink);
+		Add(btn, 0, wxALL | wxEXPAND, 3);
+	}
+	break;
+
 	default:
 	{
 		// options

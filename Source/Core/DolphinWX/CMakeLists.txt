@@ -72,6 +72,7 @@ set(GUI_SRCS
 	PostProcessingConfigDiag.cpp
 	SoftwareVideoConfigDialog.cpp
 	TASInputDlg.cpp
+	UDPConfigDiag.cpp
 	VideoConfigDiag.cpp
 	WxEventUtils.cpp
 	WXInputBase.cpp
