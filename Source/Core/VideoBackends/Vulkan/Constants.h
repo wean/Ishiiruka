@@ -19,34 +19,34 @@ constexpr size_t NUM_COMMAND_BUFFERS = 2;
 // Staging buffer usage - optimize for uploads or readbacks
 enum STAGING_BUFFER_TYPE
 {
-	STAGING_BUFFER_TYPE_UPLOAD,
-	STAGING_BUFFER_TYPE_READBACK
+  STAGING_BUFFER_TYPE_UPLOAD,
+  STAGING_BUFFER_TYPE_READBACK
 };
 
 // Descriptor set layouts
 enum DESCRIPTOR_SET_LAYOUT
 {
-	DESCRIPTOR_SET_LAYOUT_UNIFORM_BUFFERS,
-	DESCRIPTOR_SET_LAYOUT_PIXEL_SHADER_SAMPLERS,
-	DESCRIPTOR_SET_LAYOUT_SHADER_STORAGE_BUFFERS,
-	DESCRIPTOR_SET_LAYOUT_TEXEL_BUFFERS,
-	DESCRIPTOR_SET_LAYOUT_COMPUTE,
-	NUM_DESCRIPTOR_SET_LAYOUTS
+  DESCRIPTOR_SET_LAYOUT_UNIFORM_BUFFERS,
+  DESCRIPTOR_SET_LAYOUT_PIXEL_SHADER_SAMPLERS,
+  DESCRIPTOR_SET_LAYOUT_SHADER_STORAGE_BUFFERS,
+  DESCRIPTOR_SET_LAYOUT_TEXEL_BUFFERS,
+  DESCRIPTOR_SET_LAYOUT_COMPUTE,
+  NUM_DESCRIPTOR_SET_LAYOUTS
 };
 
 // Descriptor set bind points
 enum DESCRIPTOR_SET_BIND_POINT
 {
-	DESCRIPTOR_SET_BIND_POINT_UNIFORM_BUFFERS,
-	DESCRIPTOR_SET_BIND_POINT_PIXEL_SHADER_SAMPLERS,
-	DESCRIPTOR_SET_BIND_POINT_STORAGE_OR_TEXEL_BUFFER,
-	NUM_DESCRIPTOR_SET_BIND_POINTS
+  DESCRIPTOR_SET_BIND_POINT_UNIFORM_BUFFERS,
+  DESCRIPTOR_SET_BIND_POINT_PIXEL_SHADER_SAMPLERS,
+  DESCRIPTOR_SET_BIND_POINT_STORAGE_OR_TEXEL_BUFFER,
+  NUM_DESCRIPTOR_SET_BIND_POINTS
 };
 
 // We use four pipeline layouts:
 //   - Standard
 //       - Per-stage UBO (VS/GS/PS, VS constants accessible from PS)
-//       - 16 combined image samplers (accessible from PS)
+//       - 8 combined image samplers (accessible from PS)
 //   - BBox Enabled
 //       - Same as standard, plus a single SSBO accessible from PS
 //   - Push Constant
@@ -65,28 +65,28 @@ enum DESCRIPTOR_SET_BIND_POINT
 //
 enum PIPELINE_LAYOUT
 {
-	PIPELINE_LAYOUT_STANDARD,
-	PIPELINE_LAYOUT_BBOX,
-	PIPELINE_LAYOUT_PUSH_CONSTANT,
-	PIPELINE_LAYOUT_TEXTURE_CONVERSION,
-	PIPELINE_LAYOUT_COMPUTE,
-	NUM_PIPELINE_LAYOUTS
+  PIPELINE_LAYOUT_STANDARD,
+  PIPELINE_LAYOUT_BBOX,
+  PIPELINE_LAYOUT_PUSH_CONSTANT,
+  PIPELINE_LAYOUT_TEXTURE_CONVERSION,
+  PIPELINE_LAYOUT_COMPUTE,
+  NUM_PIPELINE_LAYOUTS
 };
 
 // Uniform buffer bindings within the first descriptor set
 enum UNIFORM_BUFFER_DESCRIPTOR_SET_BINDING
 {
-	UBO_DESCRIPTOR_SET_BINDING_PS,
-	UBO_DESCRIPTOR_SET_BINDING_VS,
-	UBO_DESCRIPTOR_SET_BINDING_GS,
-	NUM_UBO_DESCRIPTOR_SET_BINDINGS
+  UBO_DESCRIPTOR_SET_BINDING_PS,
+  UBO_DESCRIPTOR_SET_BINDING_VS,
+  UBO_DESCRIPTOR_SET_BINDING_GS,
+  NUM_UBO_DESCRIPTOR_SET_BINDINGS
 };
 
 // Maximum number of attributes per vertex (we don't have any more than this?)
 constexpr size_t MAX_VERTEX_ATTRIBUTES = 16;
 
 // Number of pixel shader texture slots
-constexpr size_t NUM_PIXEL_SHADER_SAMPLERS = 16;
+constexpr size_t NUM_PIXEL_SHADER_SAMPLERS = 8;
 
 // Total number of binding points in the pipeline layout
 constexpr size_t TOTAL_PIPELINE_BINDING_POINTS =
@@ -124,79 +124,12 @@ constexpr u32 PUSH_CONSTANT_BUFFER_SIZE = 128;
 // Minimum number of draw calls per command buffer when attempting to preempt a readback operation.
 constexpr u32 MINIMUM_DRAW_CALLS_PER_COMMAND_BUFFER_FOR_READBACK = 10;
 
-// Rasterization state info
-union RasterizationState {
-	BitField<0, 2, VkCullModeFlags> cull_mode;
-	BitField<2, 7, VkSampleCountFlagBits> samples;
-	BitField<9, 1, VkBool32> per_sample_shading;
-	BitField<10, 1, VkBool32> depth_clamp;
-
-	u32 bits;
-};
-
-// Depth state info
-union DepthStencilState {
-	BitField<0, 1, VkBool32> test_enable;
-	BitField<1, 1, VkBool32> write_enable;
-	BitField<2, 3, VkCompareOp> compare_op;
-
-	u32 bits;
-};
-
-// Blend state info
-union BlendState {
-	struct
-	{
-		union {
-			BitField<0, 1, VkBool32> blend_enable;
-			BitField<1, 3, VkBlendOp> blend_op;
-			BitField<4, 5, VkBlendFactor> src_blend;
-			BitField<9, 5, VkBlendFactor> dst_blend;
-			BitField<14, 3, VkBlendOp> alpha_blend_op;
-			BitField<17, 5, VkBlendFactor> src_alpha_blend;
-			BitField<22, 5, VkBlendFactor> dst_alpha_blend;
-			BitField<27, 4, VkColorComponentFlags> write_mask;
-			u32 low_bits;
-		};
-		union {
-			BitField<0, 1, VkBool32> logic_op_enable;
-			BitField<1, 4, VkLogicOp> logic_op;
-			u32 high_bits;
-		};
-	};
-
-	u64 bits;
-};
-
-// Sampler info
-union SamplerState {
-	BitField<0, 1, VkFilter> min_filter;
-	BitField<1, 1, VkFilter> mag_filter;
-	BitField<2, 1, VkSamplerMipmapMode> mipmap_mode;
-	BitField<3, 2, VkSamplerAddressMode> wrap_u;
-	BitField<5, 2, VkSamplerAddressMode> wrap_v;
-	BitField<7, 8, u32> min_lod;
-	BitField<15, 8, u32> max_lod;
-	BitField<23, 8, s32> lod_bias;
-	BitField<31, 1, u32> enable_anisotropic_filtering;
-
-	u32 bits;
-	bool operator==(const SamplerState& rhs) const 
-	{
-		return bits == rhs.bits;
-	}
-	bool operator!=(const SamplerState& rhs) const
-	{
-		return bits != rhs.bits;
-	}
-	bool operator>(const SamplerState& rhs) const
-	{
-		return bits > rhs.bits;
-	}
-	bool operator<(const SamplerState& rhs) const
-	{
-		return bits < rhs.bits;
-	}
+/// Multisampling state info that we don't expose in VideoCommon.
+union MultisamplingState
+{
+  BitField<0, 1, u32> per_sample_shading;  // SSAA
+  BitField<1, 5, u32> samples;             // 1-16
+  u32 hex;
 };
 
 }  // namespace Vulkan

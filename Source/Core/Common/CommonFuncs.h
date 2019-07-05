@@ -10,9 +10,9 @@
 
 // Will fail to compile on a non-array:
 template <typename T, size_t N>
-constexpr size_t ArraySize(T(&arr)[N])
+constexpr size_t ArraySize(T (&arr)[N])
 {
-	return N;
+  return N;
 }
 
 #define b2(x) ((x) | ((x) >> 1))
@@ -35,31 +35,31 @@ constexpr size_t ArraySize(T(&arr)[N])
 #ifndef _rotl
 inline u32 _rotl(u32 x, int shift)
 {
-	shift &= 31;
-	if (!shift)
-		return x;
-	return (x << shift) | (x >> (32 - shift));
+  shift &= 31;
+  if (!shift)
+    return x;
+  return (x << shift) | (x >> (32 - shift));
 }
 
 inline u32 _rotr(u32 x, int shift)
 {
-	shift &= 31;
-	if (!shift)
-		return x;
-	return (x >> shift) | (x << (32 - shift));
+  shift &= 31;
+  if (!shift)
+    return x;
+  return (x >> shift) | (x << (32 - shift));
 }
 #endif
 
 inline u64 _rotl64(u64 x, unsigned int shift)
 {
-	unsigned int n = shift % 64;
-	return (x << n) | (x >> (64 - n));
+  unsigned int n = shift % 64;
+  return (x << n) | (x >> (64 - n));
 }
 
 inline u64 _rotr64(u64 x, unsigned int shift)
 {
-	unsigned int n = shift % 64;
-	return (x >> n) | (x << (64 - n));
+  unsigned int n = shift % 64;
+  return (x >> n) | (x << (64 - n));
 }
 
 #else  // WIN32
@@ -78,7 +78,7 @@ inline u64 _rotr64(u64 x, unsigned int shift)
 #define fileno _fileno
 
 extern "C" {
-	__declspec(dllimport) void __stdcall DebugBreak(void);
+__declspec(dllimport) void __stdcall DebugBreak(void);
 }
 #define Crash()                                                                                    \
   {                                                                                                \
@@ -86,7 +86,12 @@ extern "C" {
   }
 #endif  // WIN32 ndef
 
-// Generic function to get last error message.
-// Call directly after the command or use the error num.
+// Wrapper function to get last strerror(errno) string.
 // This function might change the error code.
-std::string GetLastErrorMsg();
+std::string LastStrerrorString();
+
+#ifdef _WIN32
+// Wrapper function to get GetLastError() string.
+// This function might change the error code.
+std::string GetLastErrorString();
+#endif

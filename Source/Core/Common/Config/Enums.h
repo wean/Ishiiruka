@@ -4,29 +4,37 @@
 
 #pragma once
 
+#include <array>
+
 namespace Config
 {
 enum class LayerType
 {
-	Base,
-	GlobalGame,
-	LocalGame,
-	Movie,
-	Netplay,
-	CommandLine,
-	CurrentRun,
-	Meta,
+  Base,
+  GlobalGame,
+  LocalGame,
+  Movie,
+  Netplay,
+  CommandLine,
+  CurrentRun,
+  Meta,
 };
 
 enum class System
 {
-	Main,
-	GCPad,
-	WiiPad,
-	GCKeyboard,
-	GFX,
-	Logger,
-	Debugger,
-	UI,
+  Main,
+  SYSCONF,
+  GCPad,
+  WiiPad,
+  GCKeyboard,
+  GFX,
+  Logger,
+  Debugger,
+  UI,
 };
+
+constexpr std::array<LayerType, 7> SEARCH_ORDER{{
+    LayerType::CurrentRun, LayerType::CommandLine, LayerType::Movie, LayerType::Netplay,
+    LayerType::LocalGame, LayerType::GlobalGame, LayerType::Base,
+}};
 }

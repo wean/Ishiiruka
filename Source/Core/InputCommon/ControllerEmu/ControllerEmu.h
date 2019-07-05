@@ -16,7 +16,7 @@ class ControllerInterface;
 
 #define sign(x) ((x) ? (x) < 0 ? -1 : 1 : 0)
 
-const char* const named_directions[] = { "Up", "Down", "Left", "Right" };
+const char* const named_directions[] = {"Up", "Down", "Left", "Right"};
 
 namespace ControllerEmu
 {
@@ -25,25 +25,31 @@ class ControlGroup;
 class EmulatedController
 {
 public:
-	virtual ~EmulatedController();
-	virtual std::string GetName() const = 0;
+  virtual ~EmulatedController();
+  virtual std::string GetName() const = 0;
 
-	virtual void LoadDefaults(const ControllerInterface& ciface);
+  virtual void LoadDefaults(const ControllerInterface& ciface);
 
-	virtual void LoadConfig(IniFile::Section* sec, const std::string& base = "");
-	virtual void SaveConfig(IniFile::Section* sec, const std::string& base = "");
-	void UpdateDefaultDevice();
+  virtual void LoadConfig(IniFile::Section* sec, const std::string& base = "");
+  virtual void SaveConfig(IniFile::Section* sec, const std::string& base = "");
 
-	void UpdateReferences(const ControllerInterface& devi);
+  bool IsDefaultDeviceConnected() const;
+  const ciface::Core::DeviceQualifier& GetDefaultDevice() const;
+  void SetDefaultDevice(const std::string& device);
+  void SetDefaultDevice(ciface::Core::DeviceQualifier devq);
 
-	// This returns a lock that should be held before calling State() on any control
-	// references and GetState(), by extension. This prevents a race condition
-	// which happens while handling a hotplug event because a control reference's State()
-	// could be called before we have finished updating the reference.
-	static std::unique_lock<std::recursive_mutex> GetStateLock();
+  void UpdateReferences(const ControllerInterface& devi);
 
-	std::vector<std::unique_ptr<ControlGroup>> groups;
+  // This returns a lock that should be held before calling State() on any control
+  // references and GetState(), by extension. This prevents a race condition
+  // which happens while handling a hotplug event because a control reference's State()
+  // could be called before we have finished updating the reference.
+  static std::unique_lock<std::recursive_mutex> GetStateLock();
 
-	ciface::Core::DeviceQualifier default_device;
+  std::vector<std::unique_ptr<ControlGroup>> groups;
+
+private:
+  ciface::Core::DeviceQualifier m_default_device;
+  bool m_default_device_is_connected{false};
 };
 }  // namespace ControllerEmu

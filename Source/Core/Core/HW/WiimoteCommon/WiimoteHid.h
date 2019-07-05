@@ -6,8 +6,8 @@
 
 #include "Common/CommonTypes.h"
 
-// what is this ?
 #ifdef _MSC_VER
+#pragma warning(push)
 #pragma warning(disable : 4200)
 #endif
 
@@ -17,9 +17,9 @@
 
 struct hid_packet
 {
-	u8 param : 4;
-	u8 type : 4;
-	u8 data[0];
+  u8 param : 4;
+  u8 type : 4;
+  u8 data[0];
 };
 
 constexpr u8 HID_TYPE_HANDSHAKE = 0;
@@ -32,3 +32,7 @@ constexpr u8 HID_PARAM_INPUT = 1;
 constexpr u8 HID_PARAM_OUTPUT = 2;
 
 #pragma pack(pop)
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

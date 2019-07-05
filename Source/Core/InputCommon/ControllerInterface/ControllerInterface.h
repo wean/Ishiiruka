@@ -4,14 +4,12 @@
 
 #pragma once
 
-#include <algorithm>
+#include <atomic>
 #include <functional>
-#include <map>
-#include <sstream>
-#include <string>
+#include <memory>
+#include <mutex>
 #include <vector>
 
-#include "Common/CommonTypes.h"
 #include "InputCommon/ControllerInterface/Device.h"
 
 // enable disable sources
@@ -44,22 +42,24 @@
 class ControllerInterface : public ciface::Core::DeviceContainer
 {
 public:
-	ControllerInterface() : m_is_init(false), m_hwnd(nullptr) {}
-	void Initialize(void* const hwnd);
-	void RefreshDevices();
-	void Shutdown();
-	void AddDevice(std::shared_ptr<ciface::Core::Device> device);
-	void RemoveDevice(std::function<bool(const ciface::Core::Device*)> callback);
-	bool IsInit() const { return m_is_init; }
-	void UpdateInput();
+  ControllerInterface() : m_is_init(false), m_hwnd(nullptr) {}
+  void Initialize(void* const hwnd);
+  void RefreshDevices();
+  void Shutdown();
+  void AddDevice(std::shared_ptr<ciface::Core::Device> device);
+  void RemoveDevice(std::function<bool(const ciface::Core::Device*)> callback);
+  bool IsInit() const { return m_is_init; }
+  void UpdateInput();
 
-	void RegisterHotplugCallback(std::function<void(void)> callback);
-	void InvokeHotplugCallbacks() const;
+  void RegisterDevicesChangedCallback(std::function<void(void)> callback);
+  void InvokeDevicesChangedCallbacks() const;
 
 private:
-	std::vector<std::function<void()>> m_hotplug_callbacks;
-	bool m_is_init;
-	void* m_hwnd;
+  std::vector<std::function<void()>> m_devices_changed_callbacks;
+  mutable std::mutex m_callbacks_mutex;
+  bool m_is_init;
+  std::atomic<bool> m_is_populating_devices{false};
+  void* m_hwnd;
 };
 
 extern ControllerInterface g_controller_interface;

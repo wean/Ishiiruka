@@ -10,15 +10,12 @@
 
 #include "Common/CommonTypes.h"
 
-static const u64 TITLEID_SYSMENU = 0x0000000100000002;
-static const std::string TITLEID_SYSMENU_STRING = "0000000100000002";
-
 namespace Common
 {
 enum FromWhichRoot
 {
-	FROM_CONFIGURED_ROOT,  // not related to currently running game - use D_WIIROOT_IDX
-	FROM_SESSION_ROOT,     // request from currently running game - use D_SESSION_WIIROOT_IDX
+  FROM_CONFIGURED_ROOT,  // not related to currently running game - use D_WIIROOT_IDX
+  FROM_SESSION_ROOT,     // request from currently running game - use D_SESSION_WIIROOT_IDX
 };
 
 std::string RootUserPath(FromWhichRoot from);
@@ -31,6 +28,9 @@ std::string GetTitlePath(u64 title_id, FromWhichRoot from);
 std::string GetTitleDataPath(u64 _titleID, FromWhichRoot from);
 std::string GetTitleContentPath(u64 _titleID, FromWhichRoot from);
 std::string GetTMDFileName(u64 _titleID, FromWhichRoot from);
+
+// Returns whether a path is within an installed title's directory.
+bool IsTitlePath(const std::string& path, FromWhichRoot from, u64* title_id = nullptr);
 
 // Escapes characters that are invalid or have special meanings in the host file system
 std::string EscapeFileName(const std::string& filename);

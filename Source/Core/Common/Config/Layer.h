@@ -6,75 +6,144 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "Common/Config/ConfigInfo.h"
 #include "Common/Config/Enums.h"
-#include "Common/Config/Section.h"
+#include "Common/StringUtil.h"
 
 namespace Config
 {
-using LayerMap = std::map<System, std::vector<std::unique_ptr<Section>>>;
+namespace detail
+{
+std::string ValueToString(u16 value);
+std::string ValueToString(u32 value);
+std::string ValueToString(float value);
+std::string ValueToString(double value);
+std::string ValueToString(int value);
+std::string ValueToString(bool value);
+std::string ValueToString(const std::string& value);
+
+template <typename T>
+std::optional<T> TryParse(const std::string& str_value)
+{
+  T value;
+  if (!::TryParse(str_value, &value))
+    return std::nullopt;
+  return value;
+}
+
+template <>
+inline std::optional<std::string> TryParse(const std::string& str_value)
+{
+  return str_value;
+}
+}
+
+template <typename T>
+struct ConfigInfo;
+
+class Layer;
+using LayerMap = std::map<ConfigLocation, std::optional<std::string>>;
 
 class ConfigLayerLoader
 {
 public:
-	explicit ConfigLayerLoader(LayerType layer);
-	virtual ~ConfigLayerLoader();
-	virtual void Load(Layer* config_layer) = 0;
-	virtual void Save(Layer* config_layer) = 0;
+  explicit ConfigLayerLoader(LayerType layer);
+  virtual ~ConfigLayerLoader();
+  virtual void Load(Layer* config_layer) = 0;
+  virtual void Save(Layer* config_layer) = 0;
 
-	LayerType GetLayer() const;
+  LayerType GetLayer() const;
 
 private:
-	const LayerType m_layer;
+  const LayerType m_layer;
+};
+
+class Section
+{
+public:
+  using iterator = LayerMap::iterator;
+  Section(iterator begin_, iterator end_) : m_begin(begin_), m_end(end_) {}
+  iterator begin() const { return m_begin; }
+  iterator end() const { return m_end; }
+private:
+  iterator m_begin;
+  iterator m_end;
+};
+
+class ConstSection
+{
+public:
+  using iterator = LayerMap::const_iterator;
+  ConstSection(iterator begin_, iterator end_) : m_begin(begin_), m_end(end_) {}
+  iterator begin() const { return m_begin; }
+  iterator end() const { return m_end; }
+private:
+  iterator m_begin;
+  iterator m_end;
 };
 
 class Layer
 {
 public:
-	explicit Layer(LayerType layer);
-	explicit Layer(std::unique_ptr<ConfigLayerLoader> loader);
-	virtual ~Layer();
+  explicit Layer(LayerType layer);
+  explicit Layer(std::unique_ptr<ConfigLayerLoader> loader);
+  virtual ~Layer();
 
-	// Convenience functions
-	bool Exists(System system, const std::string& section_name, const std::string& key);
-	bool DeleteKey(System system, const std::string& section_name, const std::string& key);
-	template <typename T>
-	bool GetIfExists(System system, const std::string& section_name, const std::string& key, T* value)
-	{
-		if (Exists(system, section_name, key))
-			return GetOrCreateSection(system, section_name)->Get(key, value);
+  // Convenience functions
+  bool Exists(const ConfigLocation& location) const;
+  bool DeleteKey(const ConfigLocation& location);
+  void DeleteAllKeys();
 
-		return false;
-	}
+  template <typename T>
+  T Get(const ConfigInfo<T>& config_info)
+  {
+    return Get<T>(config_info.location).value_or(config_info.default_value);
+  }
 
-	virtual Section* GetSection(System system, const std::string& section_name);
-	virtual Section* GetOrCreateSection(System system, const std::string& section_name);
+  template <typename T>
+  std::optional<T> Get(const ConfigLocation& location)
+  {
+    const std::optional<std::string>& str_value = m_map[location];
+    if (!str_value)
+      return std::nullopt;
+    return detail::TryParse<T>(*str_value);
+  }
 
-	// Explicit load and save of layers
-	void Load();
-	void Save();
+  template <typename T>
+  void Set(const ConfigInfo<T>& config_info, const T& value)
+  {
+    Set<T>(config_info.location, value);
+  }
 
-	LayerType GetLayer() const;
-	const LayerMap& GetLayerMap() const;
-	// Stay away from this routine as much as possible
-	ConfigLayerLoader* GetLoader() const;
+  template <typename T>
+  void Set(const ConfigLocation& location, const T& value)
+  {
+    const std::string new_value = detail::ValueToString(value);
+    std::optional<std::string>& current_value = m_map[location];
+    if (current_value == new_value)
+      return;
+    m_is_dirty = true;
+    current_value = new_value;
+  }
+
+  Section GetSection(System system, const std::string& section);
+  ConstSection GetSection(System system, const std::string& section) const;
+
+  // Explicit load and save of layers
+  void Load();
+  void Save();
+
+  LayerType GetLayer() const;
+  const LayerMap& GetLayerMap() const;
 
 protected:
-	bool IsDirty() const;
-	void ClearDirty();
-
-	LayerMap m_sections;
-	const LayerType m_layer;
-	std::unique_ptr<ConfigLayerLoader> m_loader;
-};
-
-class RecursiveLayer final : public Layer
-{
-public:
-	RecursiveLayer();
-	Section* GetSection(System system, const std::string& section_name) override;
-	Section* GetOrCreateSection(System system, const std::string& section_name) override;
+  bool m_is_dirty = false;
+  LayerMap m_map;
+  const LayerType m_layer;
+  std::unique_ptr<ConfigLayerLoader> m_loader;
 };
 }

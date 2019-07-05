@@ -27,23 +27,23 @@ enum class TurntableGroup;
 
 enum
 {
-	WIIMOTE_CHAN_0 = 0,
-	WIIMOTE_CHAN_1,
-	WIIMOTE_CHAN_2,
-	WIIMOTE_CHAN_3,
-	WIIMOTE_BALANCE_BOARD,
-	MAX_WIIMOTES = WIIMOTE_BALANCE_BOARD,
-	MAX_BBMOTES = 5,
+  WIIMOTE_CHAN_0 = 0,
+  WIIMOTE_CHAN_1,
+  WIIMOTE_CHAN_2,
+  WIIMOTE_CHAN_3,
+  WIIMOTE_BALANCE_BOARD,
+  MAX_WIIMOTES = WIIMOTE_BALANCE_BOARD,
+  MAX_BBMOTES = 5,
 };
 
 #define WIIMOTE_INI_NAME "WiimoteNew"
 
 enum
 {
-	WIIMOTE_SRC_NONE = 0,
-	WIIMOTE_SRC_EMU = 1,
-	WIIMOTE_SRC_REAL = 2,
-	WIIMOTE_SRC_HYBRID = 3,  // emu + real
+  WIIMOTE_SRC_NONE = 0,
+  WIIMOTE_SRC_EMU = 1,
+  WIIMOTE_SRC_REAL = 2,
+  WIIMOTE_SRC_HYBRID = 3,  // emu + real
 };
 
 extern unsigned int g_wiimote_sources[MAX_BBMOTES];
@@ -52,12 +52,13 @@ namespace Wiimote
 {
 enum class InitializeMode
 {
-	DO_WAIT_FOR_WIIMOTES,
-	DO_NOT_WAIT_FOR_WIIMOTES,
+  DO_WAIT_FOR_WIIMOTES,
+  DO_NOT_WAIT_FOR_WIIMOTES,
 };
 
 void Shutdown();
 void Initialize(InitializeMode init_mode);
+void Connect(unsigned int index, bool connect);
 void ResetAllWiimotes();
 void LoadConfig();
 void Resume();
@@ -75,7 +76,9 @@ ControllerEmu::ControlGroup* GetTurntableGroup(int number, WiimoteEmu::Turntable
 
 void ControlChannel(int number, u16 channel_id, const void* data, u32 size);
 void InterruptChannel(int number, u16 channel_id, const void* data, u32 size);
+bool ButtonPressed(int number);
 void Update(int number, bool connected);
+bool NetPlay_GetButtonPress(int wiimote, bool pressed);
 }
 
 namespace WiimoteReal
