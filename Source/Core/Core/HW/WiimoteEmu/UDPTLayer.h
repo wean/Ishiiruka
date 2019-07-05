@@ -3,6 +3,8 @@
 #include "Core/HW/WiimoteEmu/WiimoteEmu.h"
 #include "InputCommon/UDPWiimote.h"
 
+typedef u16 wm_core;
+
 namespace UDPTLayer
 {
 	static void GetButtons(UDPWrapper * m, wm_core * butt)

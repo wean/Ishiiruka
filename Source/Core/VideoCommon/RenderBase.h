@@ -18,6 +18,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <vector>
 
 #include "Common/CommonTypes.h"
@@ -28,6 +29,7 @@
 
 #include "VideoCommon/BPMemory.h"
 #include "VideoCommon/FPSCounter.h"
+#include "VideoCommon/RenderState.h"
 #include "VideoCommon/VideoBackendBase.h"
 #include "VideoCommon/VideoCommon.h"
 
@@ -35,8 +37,8 @@ class PostProcessor;
 
 struct EfbPokeData
 {
-	u16 x, y;
-	u32 data;
+  u16 x, y;
+  u32 data;
 };
 
 // TODO: Move these out of here.
@@ -49,226 +51,186 @@ extern int OSDChoice;
 class Renderer
 {
 public:
-	Renderer();
-	virtual ~Renderer();
+  Renderer();
+  virtual ~Renderer();
+  virtual void Init() {}
+  virtual void Shutdown() {}
 
-	enum PixelPerfQuery
-	{
-		PP_ZCOMP_INPUT_ZCOMPLOC,
-		PP_ZCOMP_OUTPUT_ZCOMPLOC,
-		PP_ZCOMP_INPUT,
-		PP_ZCOMP_OUTPUT,
-		PP_BLEND_INPUT,
-		PP_EFB_COPY_CLOCKS
-	};
+  enum PixelPerfQuery
+  {
+    PP_ZCOMP_INPUT_ZCOMPLOC,
+    PP_ZCOMP_OUTPUT_ZCOMPLOC,
+    PP_ZCOMP_INPUT,
+    PP_ZCOMP_OUTPUT,
+    PP_BLEND_INPUT,
+    PP_EFB_COPY_CLOCKS
+  };
 
-	virtual void SetColorMask()
-	{}
-	virtual void SetBlendMode(bool forceUpdate)
-	{}
-	virtual void SetScissorRect(const TargetRectangle& rc)
-	{}
-	virtual void SetGenerationMode()
-	{}
-	virtual void SetDepthMode()
-	{}
-	virtual void SetLogicOpMode()
-	{}
-	virtual void SetDitherMode()
-	{}
-	virtual void SetSamplerState(int stage, int texindex, bool custom_tex)
-	{}
-	virtual void SetInterlacingMode()
-	{}
-	virtual void SetViewport()
-	{}
-	virtual void SetFullscreen(bool enable_fullscreen)
-	{}
-	virtual bool IsFullscreen() const
-	{ return false; }
-	virtual void ApplyState(bool bUseDstAlpha)
-	{}
-	virtual void RestoreState()
-	{}
+  virtual void SetBlendingState(const BlendingState& state) {}
+  virtual void SetScissorRect(const EFBRectangle& rc) {}
+  virtual void SetRasterizationState(const RasterizationState& state) {}
+  virtual void SetDepthState(const DepthState& state) {}
+  virtual void SetSamplerState(u32 index, const SamplerState& state) {}
+  virtual void SetInterlacingMode() {}
+  virtual void SetViewport() {}
+  virtual void SetFullscreen(bool enable_fullscreen) {}
+  virtual bool IsFullscreen() const { return false; }
+  virtual void ApplyState(bool bUseDstAlpha) {}
+  virtual void RestoreState() {}
+  virtual void ResetAPIState() {}
+  virtual void RestoreAPIState() {}
 
-	virtual void ResetAPIState()
-	{}
-	virtual void RestoreAPIState()
-	{}
+  // Ideal internal resolution - determined by display resolution (automatic scaling) and/or a multiple of the native EFB resolution
+  int GetTargetWidth() const { return m_target_width; }
+  int GetTargetHeight() const { return m_target_height; }
+  // Display resolution
+  int GetBackbufferWidth() const { return m_backbuffer_width; }
+  int GetBackbufferHeight() const { return m_backbuffer_height; }
+  void SetWindowSize(u32 width, u32 height);
 
-	// Ideal internal resolution - determined by display resolution (automatic scaling) and/or a multiple of the native EFB resolution
-	static int GetTargetWidth()
-	{
-		return s_target_width;
-	}
-	static int GetTargetHeight()
-	{
-		return s_target_height;
-	}
+  // EFB coordinate conversion functions
 
-	// Display resolution
-	static int GetBackbufferWidth()
-	{
-		return s_backbuffer_width;
-	}
-	static int GetBackbufferHeight()
-	{
-		return s_backbuffer_height;
-	}
+  // Use this to convert a whole native EFB rect to backbuffer coordinates
+  virtual TargetRectangle ConvertEFBRectangle(const EFBRectangle& rc) = 0;
 
-	static void SetWindowSize(int width, int height);
-
-	// EFB coordinate conversion functions
-
-	// Use this to convert a whole native EFB rect to backbuffer coordinates
-	virtual TargetRectangle ConvertEFBRectangle(const EFBRectangle& rc) = 0;
-
-	static const TargetRectangle& GetTargetRectangle()
-	{
-		return target_rc;
-	}
-	static float CalculateDrawAspectRatio(int target_width, int target_height);
-	static TargetRectangle CalculateFrameDumpDrawRectangle();
-	static void UpdateDrawRectangle();
-
-	// Window rectangle (client area of the render window)
-	static const TargetRectangle& GetWindowRectangle()
-	{
-		return window_rc;
-	}
-
-	// Use this to convert a single target rectangle to two stereo rectangles
-	static void ConvertStereoRectangle(const TargetRectangle& rc, TargetRectangle& leftRc, TargetRectangle& rightRc);
-
-	// Use this to upscale native EFB coordinates to IDEAL internal resolution
-	static int EFBToScaledX(int x);
-	static int EFBToScaledY(int y);
-
-	// Floating point versions of the above - only use them if really necessary
-	static float EFBToScaledXf(float x)
-	{
-		return x * ((float)GetTargetWidth() / (float)EFB_WIDTH);
-	}
-	static float EFBToScaledYf(float y)
-	{
-		return y * ((float)GetTargetHeight() / (float)EFB_HEIGHT);
-	}
-
-	// Random utilities
-	static void SetScreenshot(const std::string& filename);
-	static void DrawDebugText();
-
-	virtual void RenderText(const std::string& str, int left, int top, u32 color) = 0;
-
-	virtual void ClearScreen(const EFBRectangle& rc, bool colorEnable, bool alphaEnable, bool zEnable, u32 color, u32 z) = 0;
-	virtual void ReinterpretPixelData(unsigned int convtype) = 0;
-	static void RenderToXFB(u32 xfbAddr, const EFBRectangle& sourceRc, u32 fbStride, u32 fbHeight, float Gamma = 1.0f);
-
-	virtual u32 AccessEFB(EFBAccessType type, u32 x, u32 y, u32 poke_data) = 0;
-	virtual void PokeEFB(EFBAccessType type, const EfbPokeData* data, size_t num_points) = 0;
-	virtual u16 BBoxRead(int index) = 0;
-	virtual void BBoxWrite(int index, u16 value) = 0;
-
-	// Finish up the current frame, print some stats
-	static void Swap(u32 xfbAddr, u32 fbWidth, u32 fbStride, u32 fbHeight, const EFBRectangle& rc, u64 ticks, float Gamma = 1.0f);
-	virtual void SwapImpl(u32 xfbAddr, u32 fbWidth, u32 fbStride, u32 fbHeight, const EFBRectangle& rc, u64 ticks, float Gamma = 1.0f) = 0;
-
-	static PEControl::PixelFormat GetPrevPixelFormat()
-	{
-		return prev_efb_format;
-	}
-	static void StorePixelFormat(PEControl::PixelFormat new_format)
-	{
-		prev_efb_format = new_format;
-	}
+  const TargetRectangle& GetTargetRectangle() const { return m_target_rectangle; }
+  // Window rectangle (client area of the render window)
+  const TargetRectangle& GetWindowRectangle() const { return m_window_rectangle; }
+  void SetWindowRectangle(int left, int right, int top, int bottom)
+  {
+    m_window_rectangle.left = left;
+    m_window_rectangle.right = right;
+    m_window_rectangle.top = top;
+    m_window_rectangle.bottom = bottom;
+  }
+  float CalculateDrawAspectRatio(u32 target_width, u32 target_height) const;
+  std::tuple<float, float> ScaleToDisplayAspectRatio(u32 width, u32 height) const;
+  TargetRectangle CalculateFrameDumpDrawRectangle();
+  void UpdateDrawRectangle();
 
 
-	PostProcessor* GetPostProcessor()
-	{
-		return m_post_processor.get();
-	}
-	// Max height/width
-	virtual u32 GetMaxTextureSize() = 0;
 
-	static Common::Event s_screenshotCompleted;
-	// Final surface changing
-	// This is called when the surface is resized (WX) or the window changes (Android).
-	virtual void ChangeSurface(void* new_surface_handle) {}
+  // Use this to convert a single target rectangle to two stereo rectangles
+  std::tuple<TargetRectangle, TargetRectangle>
+    ConvertStereoRectangle(const TargetRectangle& rc) const;
+
+  // Use this to upscale native EFB coordinates to IDEAL internal resolution
+  int EFBToScaledX(int x);
+  int EFBToScaledY(int y);
+
+  // Floating point versions of the above - only use them if really necessary
+  float EFBToScaledXf(float x) const;
+  float EFBToScaledYf(float y) const;
+  float GetEFBScale() const;
+  // Random utilities
+  void SaveScreenshot(const std::string& filename, bool wait_for_completion);
+  void DrawDebugText();
+
+  virtual void RenderText(const std::string& str, int left, int top, u32 color) = 0;
+
+  virtual void ClearScreen(const EFBRectangle& rc, bool colorEnable, bool alphaEnable, bool zEnable, u32 color, u32 z) = 0;
+  virtual void ReinterpretPixelData(unsigned int convtype) = 0;
+  void RenderToXFB(u32 xfbAddr, const EFBRectangle& sourceRc, u32 fbStride, u32 fbHeight, float Gamma = 1.0f);
+
+  virtual u32 AccessEFB(EFBAccessType type, u32 x, u32 y, u32 poke_data) = 0;
+  virtual void PokeEFB(EFBAccessType type, const EfbPokeData* data, size_t num_points) = 0;
+  virtual u16 BBoxRead(int index) = 0;
+  virtual void BBoxWrite(int index, u16 value) = 0;
+
+  // Finish up the current frame, print some stats
+  void Swap(u32 xfbAddr, u32 fbWidth, u32 fbStride, u32 fbHeight, const EFBRectangle& rc, u64 ticks, float Gamma = 1.0f);
+  virtual void SwapImpl(u32 xfbAddr, u32 fbWidth, u32 fbStride, u32 fbHeight, const EFBRectangle& rc, u64 ticks, float Gamma = 1.0f) = 0;
+  virtual void InsertBlackFrame() = 0;
+  PEControl::PixelFormat GetPrevPixelFormat() const { return m_prev_efb_format; }
+  void StorePixelFormat(PEControl::PixelFormat new_format) { m_prev_efb_format = new_format; }
+
+  PostProcessor* GetPostProcessor() { return m_post_processor.get(); }
+  // Final surface changing
+  // This is called when the surface is resized (WX) or the window changes (Android).
+  virtual void ChangeSurface(void* new_surface_handle) {}
+  bool UseVertexDepthRange() const;
 protected:
+  std::tuple<int, int> CalculateTargetScale(int x, int y) const;
+  bool CalculateTargetSize(int multiplier = 1);
 
-	static void CalculateTargetScale(int x, int y, int &scaledX, int &scaledY);
-	bool CalculateTargetSize(int multiplier = 1);
+  bool CheckForHostConfigChanges();
+  static void CheckFifoRecording();
+  static void RecordVideoMemory();
 
-	static void CheckFifoRecording();
-	static void RecordVideoMemory();
+  bool IsFrameDumping();
+  void DumpFrameData(const u8* data, int w, int h, int stride, const AVIDump::Frame& state, bool swap_upside_down = false, bool bgra = false);
+  void FinishFrameData();
 
-	bool IsFrameDumping();
-	void DumpFrameData(const u8* data, int w, int h, int stride, const AVIDump::Frame& state, bool swap_upside_down = false, bool bgra = false);
-	void FinishFrameData();
+  Common::Flag m_screenshot_request;
+  Common::Event m_screenshot_completed;
+  std::mutex m_screenshot_lock;
+  std::string m_screenshot_name;
+  bool m_aspect_wide = false;
 
-	static Common::Flag s_screenshot;
-	static std::mutex s_criticalScreenshot;
-	static std::string s_sScreenshotName;
+  // The framebuffer size
+  int m_target_width = 0;
+  int m_target_height = 0;
+  float m_efb_scale = 1.0;
 
-	// The framebuffer size
-	static int s_target_width;
-	static int s_target_height;
+  // TODO: Add functionality to reinit all the render targets when the window is resized.
+  int m_backbuffer_width = 0;
+  int m_backbuffer_height = 0;
+  int m_last_efb_scale;
+  bool m_last_hp_frame_buffer;
+  TargetRectangle m_target_rectangle{};
+  TargetRectangle m_window_rectangle{};
+  bool m_xfb_written{};
 
-	// TODO: Add functionality to reinit all the render targets when the window is resized.
-	static int s_backbuffer_width;
-	static int s_backbuffer_height;
+  FPSCounter m_fps_counter;
+  u32 m_last_host_config_bits = 0;
+  bool m_last_uber_shader_enabled = false;
+  std::unique_ptr<PostProcessor> m_post_processor;
 
-	static TargetRectangle target_rc;
-	static TargetRectangle window_rc;
+  static const float GX_MAX_DEPTH;
 
-	// can probably eliminate this static var
-	static int s_last_efb_scale;
-
-	static bool XFBWrited;
-
-	FPSCounter m_fps_counter;
-
-	static std::unique_ptr<PostProcessor> m_post_processor;
-	
-	static Common::Flag s_surface_needs_change;
-	static Common::Event s_surface_changed;
-	static void* s_new_surface_handle;
-	static const float GX_MAX_DEPTH;
+  Common::Flag m_surface_needs_change;
+  Common::Event m_surface_changed;
+  void* m_new_surface_handle = nullptr;
 private:
-	void RunFrameDumps();
-	void ShutdownFrameDumping();
-	static PEControl::PixelFormat prev_efb_format;
-	static unsigned int efb_scale_numeratorX;
-	static unsigned int efb_scale_numeratorY;
-	static unsigned int efb_scale_denominatorX;
-	static unsigned int efb_scale_denominatorY;
-	static unsigned int ssaa_multiplier;
+  void RunFrameDumps();
+  void ShutdownFrameDumping();
+  PEControl::PixelFormat m_prev_efb_format = PEControl::INVALID_FMT;
+  u32 m_efb_scale_numeratorX = 1;
+  u32 m_efb_scale_numeratorY = 1;
+  u32 m_efb_scale_denominatorX = 1;
+  u32 m_efb_scale_denominatorY = 1;
+  u32 m_ssaa_multiplier = 1;
+  
+  // These will be set on the first call to SetWindowSize.
+  u32 m_last_window_request_width = 0;
+  u32 m_last_window_request_height = 0;
 
-	// frame dumping
-	std::thread m_frame_dump_thread;
-	Common::Event m_frame_dump_start;
-	Common::Event m_frame_dump_done;
-	Common::Flag m_frame_dump_thread_running;
-	u32 m_frame_dump_image_counter = 0;
-	bool m_frame_dump_frame_running = false;
-	struct FrameDumpConfig
-	{
-		const u8* data;
-		int width;
-		int height;
-		int stride;
-		bool upside_down;
-		bool bgra;
-		AVIDump::Frame state;
-	} m_frame_dump_config;
+  // frame dumping
+  std::thread m_frame_dump_thread;
+  Common::Event m_frame_dump_start;
+  Common::Event m_frame_dump_done;
+  Common::Flag m_frame_dump_thread_running;
+  u32 m_frame_dump_image_counter = 0;
+  bool m_frame_dump_frame_running = false;
 
-	// NOTE: The methods below are called on the framedumping thread.
-	bool StartFrameDumpToAVI(const FrameDumpConfig& config);
-	void DumpFrameToAVI(const FrameDumpConfig& config);
-	void StopFrameDumpToAVI();
-	std::string GetFrameDumpNextImageFileName() const;
-	bool StartFrameDumpToImage(const FrameDumpConfig& config);
-	void DumpFrameToImage(const FrameDumpConfig& config);
+  struct FrameDumpConfig
+  {
+    const u8* data;
+    int width;
+    int height;
+    int stride;
+    bool upside_down;
+    bool bgra;
+    AVIDump::Frame state;
+  } m_frame_dump_config;
+
+  // NOTE: The methods below are called on the framedumping thread.
+  bool StartFrameDumpToAVI(const FrameDumpConfig& config);
+  void DumpFrameToAVI(const FrameDumpConfig& config);
+  void StopFrameDumpToAVI();
+  std::string GetFrameDumpNextImageFileName() const;
+  bool StartFrameDumpToImage(const FrameDumpConfig& config);
+  void DumpFrameToImage(const FrameDumpConfig& config);
 
 };
 

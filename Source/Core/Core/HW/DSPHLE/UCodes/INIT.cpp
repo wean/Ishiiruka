@@ -3,8 +3,11 @@
 // Refer to the license.txt file included.
 
 #include "Core/HW/DSPHLE/UCodes/INIT.h"
+
 #include "Common/CommonTypes.h"
 #include "Common/Logging/Log.h"
+#include "Core/HW/DSPHLE/DSPHLE.h"
+#include "Core/HW/DSPHLE/MailHandler.h"
 #include "Core/HW/DSPHLE/UCodes/UCodes.h"
 
 namespace DSP
@@ -13,7 +16,7 @@ namespace HLE
 {
 INITUCode::INITUCode(DSPHLE* dsphle, u32 crc) : UCodeInterface(dsphle, crc)
 {
-	INFO_LOG(DSPHLE, "INITUCode - initialized");
+  INFO_LOG(DSPHLE, "INITUCode - initialized");
 }
 
 INITUCode::~INITUCode()
@@ -22,7 +25,7 @@ INITUCode::~INITUCode()
 
 void INITUCode::Initialize()
 {
-	m_mail_handler.PushMail(0x80544348);
+  m_mail_handler.PushMail(0x80544348);
 }
 
 void INITUCode::Init()

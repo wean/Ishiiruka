@@ -19,7 +19,6 @@ namespace PPCAnalyst
 class CodeBuffer;
 }
 
-// The following register assignments are common to Jit64 and Jit64IL:
 // RSCRATCH and RSCRATCH2 are always scratch registers and can be used without
 // limitation.
 constexpr Gen::X64Reg RSCRATCH = Gen::RAX;
@@ -38,14 +37,14 @@ constexpr size_t CODE_SIZE = 1024 * 1024 * 32;
 class Jitx86Base : public JitBase, public QuantizedMemoryRoutines
 {
 protected:
-	bool BackPatch(u32 emAddress, SContext* ctx);
-	JitBlockCache blocks{ *this };
-	TrampolineCache trampolines;
+  bool BackPatch(u32 emAddress, SContext* ctx);
+  JitBlockCache blocks{*this};
+  TrampolineCache trampolines;
 
 public:
-	JitBlockCache* GetBlockCache() override { return &blocks; }
-	bool HandleFault(uintptr_t access_address, SContext* ctx) override;
+  JitBlockCache* GetBlockCache() override { return &blocks; }
+  bool HandleFault(uintptr_t access_address, SContext* ctx) override;
 };
 
 void LogGeneratedX86(size_t size, const PPCAnalyst::CodeBuffer* code_buffer, const u8* normalEntry,
-	const JitBlock* b);
+                     const JitBlock* b);

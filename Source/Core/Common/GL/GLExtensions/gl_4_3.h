@@ -38,24 +38,6 @@
 #define GL_PRIMITIVE_RESTART_FIXED_INDEX 0x8D69
 #define GL_ANY_SAMPLES_PASSED_CONSERVATIVE 0x8D6A
 #define GL_MAX_ELEMENT_INDEX 0x8D6B
-#define GL_COMPUTE_SHADER 0x91B9
-#define GL_MAX_COMPUTE_UNIFORM_BLOCKS 0x91BB
-#define GL_MAX_COMPUTE_TEXTURE_IMAGE_UNITS 0x91BC
-#define GL_MAX_COMPUTE_IMAGE_UNIFORMS 0x91BD
-#define GL_MAX_COMPUTE_SHARED_MEMORY_SIZE 0x8262
-#define GL_MAX_COMPUTE_UNIFORM_COMPONENTS 0x8263
-#define GL_MAX_COMPUTE_ATOMIC_COUNTER_BUFFERS 0x8264
-#define GL_MAX_COMPUTE_ATOMIC_COUNTERS 0x8265
-#define GL_MAX_COMBINED_COMPUTE_UNIFORM_COMPONENTS 0x8266
-#define GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS 0x90EB
-#define GL_MAX_COMPUTE_WORK_GROUP_COUNT 0x91BE
-#define GL_MAX_COMPUTE_WORK_GROUP_SIZE 0x91BF
-#define GL_COMPUTE_WORK_GROUP_SIZE 0x8267
-#define GL_UNIFORM_BLOCK_REFERENCED_BY_COMPUTE_SHADER 0x90EC
-#define GL_ATOMIC_COUNTER_BUFFER_REFERENCED_BY_COMPUTE_SHADER 0x90ED
-#define GL_DISPATCH_INDIRECT_BUFFER 0x90EE
-#define GL_DISPATCH_INDIRECT_BUFFER_BINDING 0x90EF
-#define GL_COMPUTE_SHADER_BIT 0x00000020
 #define GL_DEBUG_OUTPUT_SYNCHRONOUS 0x8242
 #define GL_DEBUG_NEXT_LOGGED_MESSAGE_LENGTH 0x8243
 #define GL_DEBUG_CALLBACK_FUNCTION 0x8244
@@ -283,73 +265,68 @@
 #define GL_DISPLAY_LIST 0x82E7
 
 typedef void(APIENTRYP PFNDOLCLEARBUFFERDATAPROC)(GLenum target, GLenum internalformat,
-	GLenum format, GLenum type, const void* data);
+                                                  GLenum format, GLenum type, const void* data);
 typedef void(APIENTRYP PFNDOLCLEARBUFFERSUBDATAPROC)(GLenum target, GLenum internalformat,
-	GLintptr offset, GLsizeiptr size,
-	GLenum format, GLenum type, const void* data);
-typedef void(APIENTRYP PFNDOLDISPATCHCOMPUTEPROC)(GLuint num_groups_x, GLuint num_groups_y,
-	GLuint num_groups_z);
-typedef void(APIENTRYP PFNDOLDISPATCHCOMPUTEINDIRECTPROC)(GLintptr indirect);
+                                                     GLintptr offset, GLsizeiptr size,
+                                                     GLenum format, GLenum type, const void* data);
 typedef void(APIENTRYP PFNDOLFRAMEBUFFERPARAMETERIPROC)(GLenum target, GLenum pname, GLint param);
 typedef void(APIENTRYP PFNDOLGETFRAMEBUFFERPARAMETERIVPROC)(GLenum target, GLenum pname,
-	GLint* params);
+                                                            GLint* params);
 typedef void(APIENTRYP PFNDOLGETINTERNALFORMATI64VPROC)(GLenum target, GLenum internalformat,
-	GLenum pname, GLsizei bufSize,
-	GLint64* params);
+                                                        GLenum pname, GLsizei bufSize,
+                                                        GLint64* params);
 typedef void(APIENTRYP PFNDOLINVALIDATETEXSUBIMAGEPROC)(GLuint texture, GLint level, GLint xoffset,
-	GLint yoffset, GLint zoffset, GLsizei width,
-	GLsizei height, GLsizei depth);
+                                                        GLint yoffset, GLint zoffset, GLsizei width,
+                                                        GLsizei height, GLsizei depth);
 typedef void(APIENTRYP PFNDOLINVALIDATETEXIMAGEPROC)(GLuint texture, GLint level);
 typedef void(APIENTRYP PFNDOLINVALIDATEBUFFERSUBDATAPROC)(GLuint buffer, GLintptr offset,
-	GLsizeiptr length);
+                                                          GLsizeiptr length);
 typedef void(APIENTRYP PFNDOLINVALIDATEBUFFERDATAPROC)(GLuint buffer);
 typedef void(APIENTRYP PFNDOLINVALIDATEFRAMEBUFFERPROC)(GLenum target, GLsizei numAttachments,
-	const GLenum* attachments);
+                                                        const GLenum* attachments);
 typedef void(APIENTRYP PFNDOLINVALIDATESUBFRAMEBUFFERPROC)(GLenum target, GLsizei numAttachments,
-	const GLenum* attachments, GLint x,
-	GLint y, GLsizei width, GLsizei height);
+                                                           const GLenum* attachments, GLint x,
+                                                           GLint y, GLsizei width, GLsizei height);
 typedef void(APIENTRYP PFNDOLMULTIDRAWARRAYSINDIRECTPROC)(GLenum mode, const void* indirect,
-	GLsizei drawcount, GLsizei stride);
+                                                          GLsizei drawcount, GLsizei stride);
 typedef void(APIENTRYP PFNDOLMULTIDRAWELEMENTSINDIRECTPROC)(GLenum mode, GLenum type,
-	const void* indirect, GLsizei drawcount,
-	GLsizei stride);
+                                                            const void* indirect, GLsizei drawcount,
+                                                            GLsizei stride);
 typedef void(APIENTRYP PFNDOLGETPROGRAMINTERFACEIVPROC)(GLuint program, GLenum programInterface,
-	GLenum pname, GLint* params);
+                                                        GLenum pname, GLint* params);
 typedef GLuint(APIENTRYP PFNDOLGETPROGRAMRESOURCEINDEXPROC)(GLuint program, GLenum programInterface,
-	const GLchar* name);
+                                                            const GLchar* name);
 typedef void(APIENTRYP PFNDOLGETPROGRAMRESOURCENAMEPROC)(GLuint program, GLenum programInterface,
-	GLuint index, GLsizei bufSize,
-	GLsizei* length, GLchar* name);
+                                                         GLuint index, GLsizei bufSize,
+                                                         GLsizei* length, GLchar* name);
 typedef void(APIENTRYP PFNDOLGETPROGRAMRESOURCEIVPROC)(GLuint program, GLenum programInterface,
-	GLuint index, GLsizei propCount,
-	const GLenum* props, GLsizei bufSize,
-	GLsizei* length, GLint* params);
+                                                       GLuint index, GLsizei propCount,
+                                                       const GLenum* props, GLsizei bufSize,
+                                                       GLsizei* length, GLint* params);
 typedef GLint(APIENTRYP PFNDOLGETPROGRAMRESOURCELOCATIONPROC)(GLuint program,
-	GLenum programInterface,
-	const GLchar* name);
+                                                              GLenum programInterface,
+                                                              const GLchar* name);
 typedef GLint(APIENTRYP PFNDOLGETPROGRAMRESOURCELOCATIONINDEXPROC)(GLuint program,
-	GLenum programInterface,
-	const GLchar* name);
+                                                                   GLenum programInterface,
+                                                                   const GLchar* name);
 typedef void(APIENTRYP PFNDOLTEXBUFFERRANGEPROC)(GLenum target, GLenum internalformat,
-	GLuint buffer, GLintptr offset, GLsizeiptr size);
+                                                 GLuint buffer, GLintptr offset, GLsizeiptr size);
 typedef void(APIENTRYP PFNDOLTEXTUREVIEWPROC)(GLuint texture, GLenum target, GLuint origtexture,
-	GLenum internalformat, GLuint minlevel,
-	GLuint numlevels, GLuint minlayer, GLuint numlayers);
+                                              GLenum internalformat, GLuint minlevel,
+                                              GLuint numlevels, GLuint minlayer, GLuint numlayers);
 typedef void(APIENTRYP PFNDOLBINDVERTEXBUFFERPROC)(GLuint bindingindex, GLuint buffer,
-	GLintptr offset, GLsizei stride);
+                                                   GLintptr offset, GLsizei stride);
 typedef void(APIENTRYP PFNDOLVERTEXATTRIBFORMATPROC)(GLuint attribindex, GLint size, GLenum type,
-	GLboolean normalized, GLuint relativeoffset);
+                                                     GLboolean normalized, GLuint relativeoffset);
 typedef void(APIENTRYP PFNDOLVERTEXATTRIBIFORMATPROC)(GLuint attribindex, GLint size, GLenum type,
-	GLuint relativeoffset);
+                                                      GLuint relativeoffset);
 typedef void(APIENTRYP PFNDOLVERTEXATTRIBLFORMATPROC)(GLuint attribindex, GLint size, GLenum type,
-	GLuint relativeoffset);
+                                                      GLuint relativeoffset);
 typedef void(APIENTRYP PFNDOLVERTEXATTRIBBINDINGPROC)(GLuint attribindex, GLuint bindingindex);
 typedef void(APIENTRYP PFNDOLVERTEXBINDINGDIVISORPROC)(GLuint bindingindex, GLuint divisor);
 
 extern PFNDOLCLEARBUFFERDATAPROC dolClearBufferData;
 extern PFNDOLCLEARBUFFERSUBDATAPROC dolClearBufferSubData;
-extern PFNDOLDISPATCHCOMPUTEPROC dolDispatchCompute;
-extern PFNDOLDISPATCHCOMPUTEINDIRECTPROC dolDispatchComputeIndirect;
 extern PFNDOLFRAMEBUFFERPARAMETERIPROC dolFramebufferParameteri;
 extern PFNDOLGETFRAMEBUFFERPARAMETERIVPROC dolGetFramebufferParameteriv;
 extern PFNDOLGETINTERNALFORMATI64VPROC dolGetInternalformati64v;
@@ -378,8 +355,6 @@ extern PFNDOLVERTEXBINDINGDIVISORPROC dolVertexBindingDivisor;
 
 #define glClearBufferData dolClearBufferData
 #define glClearBufferSubData dolClearBufferSubData
-#define glDispatchCompute dolDispatchCompute
-#define glDispatchComputeIndirect dolDispatchComputeIndirect
 #define glFramebufferParameteri dolFramebufferParameteri
 #define glGetFramebufferParameteriv dolGetFramebufferParameteriv
 #define glGetInternalformati64v dolGetInternalformati64v

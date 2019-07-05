@@ -11,16 +11,16 @@ class wxStaticText;
 class GCAdapterConfigDiag : public wxDialog
 {
 public:
-	GCAdapterConfigDiag(wxWindow* const parent, const wxString& name, const int tab_num = 0);
-	~GCAdapterConfigDiag();
-
-	void ScheduleAdapterUpdate();
-	void OnUpdateAdapter(wxCommandEvent& ev);
+  GCAdapterConfigDiag(wxWindow* const parent, const wxString& name, const int tab_num = 0);
+  ~GCAdapterConfigDiag();
 
 private:
-	wxStaticText* m_adapter_status;
-	int m_pad_id;
+  void ScheduleAdapterUpdate();
 
-	void OnAdapterRumble(wxCommandEvent& event);
-	void OnAdapterKonga(wxCommandEvent& event);
+  void OnUpdateAdapter(wxCommandEvent& event);
+  void OnAdapterRumble(wxCommandEvent& event);
+  void OnAdapterKonga(wxCommandEvent& event);
+
+  wxStaticText* m_adapter_status;
+  int m_pad_id;
 };

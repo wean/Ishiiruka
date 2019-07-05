@@ -1,4 +1,4 @@
-// Copyright 2008 Dolphin Emulator Project
+// Copyright 2013 Dolphin Emulator Project
 // Licensed under GPLv2+
 // Refer to the license.txt file included.
 
@@ -27,60 +27,46 @@ struct IXAudio2MasteringVoice;
 
 #endif
 
-class XAudio2_7 final: public SoundStream
+class XAudio2_7 final : public SoundStream
 {
 #ifdef _WIN32
-protected:
-	virtual void InitializeSoundLoop() override;
-	virtual u32 SamplesNeeded() override;
-	virtual void WriteSamples(s16 *src, u32 numsamples) override;
-	virtual bool SupportSurroundOutput() override;
+
 private:
-	static void ReleaseIXAudio2(IXAudio2 *ptr);
+  static void ReleaseIXAudio2(IXAudio2* ptr);
 
-	class Releaser
-	{
-	public:
-		template <typename R>
-		void operator()(R *ptr)
-		{
-			ReleaseIXAudio2(ptr);
-		}
-	};
+  class Releaser
+  {
+  public:
+    template <typename R>
+    void operator()(R* ptr)
+    {
+      ReleaseIXAudio2(ptr);
+    }
+  };
 
-	std::unique_ptr<IXAudio2, Releaser> m_xaudio2;
-	std::unique_ptr<StreamingVoiceContext2_7> m_voice_context;
-	IXAudio2MasteringVoice *m_mastering_voice;
-	float m_volume;
+  std::unique_ptr<IXAudio2, Releaser> m_xaudio2;
+  std::unique_ptr<StreamingVoiceContext2_7> m_voice_context;
+  IXAudio2MasteringVoice* m_mastering_voice;
 
-	const bool m_cleanup_com;
+  Common::Event m_sound_sync_event;
+  float m_volume;
 
-	static HMODULE m_xaudio2_dll;
+  const bool m_cleanup_com;
 
-	static bool InitLibrary();
-	u32 samplesize;
+  static HMODULE m_xaudio2_dll;
 
-public:
-	XAudio2_7();
-	virtual ~XAudio2_7();
-
-	virtual bool Start();
-	virtual void Stop();
-
-	virtual void Update();
-	virtual void Clear(bool mute);
-	virtual void SetVolume(int volume);
-
-	static bool isValid()
-	{
-		return InitLibrary();
-	}
-
-#else
+  static bool InitLibrary();
+  void Stop();
 
 public:
-	XAudio2_7()
-	{}
+  XAudio2_7();
+  ~XAudio2_7() override;
 
+  bool Init() override;
+
+  bool SetRunning(bool running) override;
+  void SetVolume(int volume) override;
+
+  static bool isValid() { return InitLibrary(); }
 #endif
 };

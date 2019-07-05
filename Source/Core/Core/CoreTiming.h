@@ -25,18 +25,22 @@ class PointerWrap;
 namespace CoreTiming
 {
 // These really shouldn't be global, but jit64 accesses them directly
-extern s64 g_global_timer;
-extern u64 g_fake_TB_start_value;
-extern u64 g_fake_TB_start_ticks;
-extern int g_slice_length;
-extern float g_last_OC_factor_inverted;
+struct Globals
+{
+  s64 global_timer;
+  int slice_length;
+  u64 fake_TB_start_value;
+  u64 fake_TB_start_ticks;
+  float last_OC_factor_inverted;
+};
+extern Globals g;
 
 // CoreTiming begins at the boundary of timing slice -1. An initial call to Advance() is
 // required to end slice -1 and start slice 0 before the first cycle of code is executed.
 void Init();
 void Shutdown();
 
-typedef void(*TimedCallback)(u64 userdata, s64 cyclesLate);
+typedef void (*TimedCallback)(u64 userdata, s64 cyclesLate);
 
 // This should only be called from the CPU thread, if you are calling it any other thread, you are
 // doing something evil
@@ -54,11 +58,11 @@ void UnregisterAllEvents();
 
 enum class FromThread
 {
-	CPU,
-	NON_CPU,
-	// Don't use ANY unless you're sure you need to call from
-	// both the CPU thread and at least one other thread
-	ANY
+  CPU,
+  NON_CPU,
+  // Don't use ANY unless you're sure you need to call from
+  // both the CPU thread and at least one other thread
+  ANY
 };
 
 // userdata MAY NOT CONTAIN POINTERS. userdata might get written and reloaded from savestates.
@@ -66,7 +70,7 @@ enum class FromThread
 // is scheduled earlier than the current values (when scheduled from the CPU Thread only).
 // Scheduling from a callback will not update the downcount until the Advance() completes.
 void ScheduleEvent(s64 cycles_into_future, EventType* event_type, u64 userdata = 0,
-	FromThread from = FromThread::CPU);
+                   FromThread from = FromThread::CPU);
 
 // We only permit one event of each type in the queue at a time.
 void RemoveEvent(EventType* event_type);
@@ -91,6 +95,8 @@ void ClearPendingEvents();
 void LogPendingEvents();
 
 std::string GetScheduledEventsSummary();
+
+void AdjustEventQueueTimes(u32 new_ppc_clock, u32 old_ppc_clock);
 
 u32 GetFakeDecStartValue();
 void SetFakeDecStartValue(u32 val);

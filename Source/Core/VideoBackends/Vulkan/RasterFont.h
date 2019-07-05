@@ -18,22 +18,24 @@ class Texture2D;
 class RasterFont
 {
 public:
-	RasterFont();
-	~RasterFont();
+  RasterFont();
+  ~RasterFont();
 
-	bool Initialize();
+  const Texture2D* GetTexture() const;
 
-	void PrintMultiLineText(VkRenderPass render_pass, const std::string& text, float start_x,
-		float start_y, u32 bbWidth, u32 bbHeight, u32 color);
+  bool Initialize();
+
+  void PrintMultiLineText(VkRenderPass render_pass, const std::string& text, float start_x,
+    float start_y, u32 bbWidth, u32 bbHeight, u32 color);
 
 private:
-	bool CreateTexture();
-	bool CreateShaders();
+  bool CreateTexture();
+  bool CreateShaders();
 
-	std::unique_ptr<Texture2D> m_texture;
+  std::unique_ptr<Texture2D> m_texture;
 
-	VkShaderModule m_vertex_shader = VK_NULL_HANDLE;
-	VkShaderModule m_fragment_shader = VK_NULL_HANDLE;
+  VkShaderModule m_vertex_shader = VK_NULL_HANDLE;
+  VkShaderModule m_fragment_shader = VK_NULL_HANDLE;
 };
 
 }  // namespace Vulkan

@@ -2,165 +2,267 @@
 // Licensed under GPLv2+
 // Refer to the license.txt file included.
 
+#include "Core/HLE/HLE_OS.h"
+
+#include <memory>
 #include <string>
 
 #include "Common/CommonTypes.h"
 #include "Common/Logging/Log.h"
 #include "Common/MsgHandler.h"
 #include "Common/StringUtil.h"
-#include "Core/HLE/HLE_OS.h"
-#include "Core/HW/Memmap.h"
+#include "Core/HLE/HLE_VarArgs.h"
 #include "Core/PowerPC/PowerPC.h"
 
 namespace HLE_OS
 {
-std::string GetStringVA(u32 strReg = 3);
+enum class ParameterType : bool
+{
+  ParameterList = false,
+  VariableArgumentList = true
+};
+
+std::string GetStringVA(u32 str_reg = 3,
+                        ParameterType parameter_type = ParameterType::ParameterList);
+void HLE_GeneralDebugPrint(ParameterType parameter_type);
+void HLE_LogDPrint(ParameterType parameter_type);
+void HLE_LogFPrint(ParameterType parameter_type);
 
 void HLE_OSPanic()
 {
-	std::string error = GetStringVA();
-	std::string msg = GetStringVA(5);
+  std::string error = GetStringVA();
+  std::string msg = GetStringVA(5);
 
-	PanicAlert("OSPanic: %s: %s", error.c_str(), msg.c_str());
-	ERROR_LOG(OSREPORT, "%08x->%08x| OSPanic: %s: %s", LR, PC, error.c_str(), msg.c_str());
+  StringPopBackIf(&error, '\n');
+  StringPopBackIf(&msg, '\n');
 
-	NPC = LR;
+  PanicAlert("OSPanic: %s: %s", error.c_str(), msg.c_str());
+  ERROR_LOG(OSREPORT, "%08x->%08x| OSPanic: %s: %s", LR, PC, error.c_str(), msg.c_str());
+
+  NPC = LR;
 }
 
-// Generalized func for just printing string pointed to by r3.
+// Generalized function for printing formatted string.
+void HLE_GeneralDebugPrint(ParameterType parameter_type)
+{
+  std::string report_message;
+
+  // Is gpr3 pointing to a pointer (including nullptr) rather than an ASCII string
+  if (PowerPC::HostIsRAMAddress(GPR(3)) &&
+    (PowerPC::HostIsRAMAddress(PowerPC::HostRead_U32(GPR(3))) ||
+      PowerPC::HostRead_U32(GPR(3)) == 0))
+  {
+    if (PowerPC::HostIsRAMAddress(GPR(4)))
+    {
+      // ___blank(void* this, const char* fmt, ...);
+      report_message = GetStringVA(4, parameter_type);
+    }
+    else
+    {
+      // ___blank(void* this, int log_type, const char* fmt, ...);
+      report_message = GetStringVA(5, parameter_type);
+    }
+  }
+  else
+  {
+    if (PowerPC::HostIsRAMAddress(GPR(3)))
+    {
+      // ___blank(const char* fmt, ...);
+      report_message = GetStringVA(3, parameter_type);
+    }
+    else
+    {
+      // ___blank(int log_type, const char* fmt, ...);
+      report_message = GetStringVA(4, parameter_type);
+    }
+  }
+
+  StringPopBackIf(&report_message, '\n');
+
+  NPC = LR;
+
+  NOTICE_LOG(OSREPORT, "%08x->%08x| %s", LR, PC, SHIFTJISToUTF8(report_message).c_str());
+}
+
+// Generalized function for printing formatted string using parameter list.
 void HLE_GeneralDebugPrint()
 {
-	std::string report_message;
-
-	// Is gpr3 pointing to a pointer rather than an ASCII string
-	if (PowerPC::HostRead_U32(GPR(3)) > 0x80000000)
-	{
-		if (GPR(4) > 0x80000000)
-		{
-			// ___blank(void* this, const char* fmt, ...);
-			report_message = GetStringVA(4);
-		}
-		else
-		{
-			// ___blank(void* this, int log_type, const char* fmt, ...);
-			report_message = GetStringVA(5);
-		}
-	}
-	else
-	{
-		// ___blank(const char* fmt, ...);
-		report_message = GetStringVA();
-	}
-	rGPR[3] = static_cast<u32>(report_message.length());
-	NPC = LR;
-	if (!report_message.empty() && report_message.back() == '\n')
-		report_message.pop_back();
-	NOTICE_LOG(OSREPORT, "%08x->%08x| %s", LR, PC, SHIFTJISToUTF8(report_message).c_str());
+  HLE_GeneralDebugPrint(ParameterType::ParameterList);
 }
 
-// __write_console is slightly abnormal
+// Generalized function for printing formatted string using va_list.
+void HLE_GeneralDebugVPrint()
+{
+  HLE_GeneralDebugPrint(ParameterType::VariableArgumentList);
+}
+
+// __write_console(int fd, const void* buffer, const u32* size)
 void HLE_write_console()
 {
-	std::string report_message = GetStringVA(4);
+  std::string report_message = GetStringVA(4);
+  if (PowerPC::HostIsRAMAddress(GPR(5)))
+  {
+    u32 size = PowerPC::Read_U32(GPR(5));
+    if (size > report_message.size())
+      WARN_LOG(OSREPORT, "__write_console uses an invalid size of 0x%08x", size);
+    else if (size == 0)
+      WARN_LOG(OSREPORT, "__write_console uses a size of zero");
+    else
+      report_message = report_message.substr(0, size);
+  }
+  else
+  {
+    ERROR_LOG(OSREPORT, "__write_console uses an unreachable size pointer");
+  }
 
-	NPC = LR;
+  StringPopBackIf(&report_message, '\n');
 
-	NOTICE_LOG(OSREPORT, "%08x->%08x| %s", LR, PC, SHIFTJISToUTF8(report_message).c_str());
+  NPC = LR;
+
+  NOTICE_LOG(OSREPORT, "%08x->%08x| %s", LR, PC, SHIFTJISToUTF8(report_message).c_str());
 }
 
-std::string GetStringVA(u32 strReg)
+// Log (v)dprintf message if fd is 1 (stdout) or 2 (stderr)
+void HLE_LogDPrint(ParameterType parameter_type)
 {
-	std::string ArgumentBuffer;
-	u32 ParameterCounter = strReg + 1;
-	u32 FloatingParameterCounter = 1;
+  NPC = LR;
 
-	std::string result;
-	std::string string = PowerPC::HostGetString(GPR(strReg));
+  if (GPR(3) != 1 && GPR(3) != 2)
+    return;
 
-	for (size_t i = 0; i < string.size(); i++)
-	{
-		if (string[i] == '%')
-		{
-			ArgumentBuffer = '%';
-			i++;
-			if (string[i] == '%')
-			{
-				result += '%';
-				continue;
-			}
+  std::string report_message = GetStringVA(4, parameter_type);
+  StringPopBackIf(&report_message, '\n');
+  NOTICE_LOG(OSREPORT, "%08x->%08x| %s", LR, PC, SHIFTJISToUTF8(report_message).c_str());
+}
 
-			while (i < string.size() &&
-				(string[i] < 'A' || string[i] > 'z' || string[i] == 'l' || string[i] == '-'))
-			{
-				ArgumentBuffer += string[i++];
-			}
-			if (i >= string.size())
-				break;
+// Log dprintf message
+//  -> int dprintf(int fd, const char* format, ...);
+void HLE_LogDPrint()
+{
+  HLE_LogDPrint(ParameterType::ParameterList);
+}
 
-			ArgumentBuffer += string[i];
+// Log vdprintf message
+//  -> int vdprintf(int fd, const char* format, va_list ap);
+void HLE_LogVDPrint()
+{
+  HLE_LogDPrint(ParameterType::VariableArgumentList);
+}
 
-			u64 Parameter;
-			if (ParameterCounter > 10)
-			{
-				Parameter = PowerPC::HostRead_U32(GPR(1) + 0x8 + ((ParameterCounter - 11) * 4));
-			}
-			else
-			{
-				if (string[i - 1] == 'l' &&
-					string[i - 2] == 'l')  // hax, just seen this on sysmenu osreport
-				{
-					Parameter = GPR(++ParameterCounter);
-					Parameter = (Parameter << 32) | GPR(++ParameterCounter);
-				}
-				else  // normal, 32bit
-					Parameter = GPR(ParameterCounter);
-			}
-			ParameterCounter++;
+// Log (v)fprintf message if FILE is stdout or stderr
+void HLE_LogFPrint(ParameterType parameter_type)
+{
+  NPC = LR;
 
-			switch (string[i])
-			{
-			case 's':
-				result += StringFromFormat(ArgumentBuffer.c_str(),
-					PowerPC::HostGetString((u32)Parameter).c_str());
-				break;
+  // The structure FILE is implementation defined.
+  // Both libogc and Dolphin SDK seem to store the fd at the same address.
+  int fd = -1;
+  if (PowerPC::HostIsRAMAddress(GPR(3)) && PowerPC::HostIsRAMAddress(GPR(3) + 0xF))
+  {
+    // The fd is stored as a short at FILE+0xE.
+    fd = static_cast<short>(PowerPC::HostRead_U16(GPR(3) + 0xE));
+  }
+  if (fd != 1 && fd != 2)
+  {
+    // On RVL SDK it seems stored at FILE+0x2.
+    fd = static_cast<short>(PowerPC::HostRead_U16(GPR(3) + 0x2));
+  }
+  if (fd != 1 && fd != 2)
+    return;
 
-			case 'd':
-			case 'i':
-			{
-				result += StringFromFormat(ArgumentBuffer.c_str(), Parameter);
-				break;
-			}
+  std::string report_message = GetStringVA(4, parameter_type);
+  StringPopBackIf(&report_message, '\n');
+  NOTICE_LOG(OSREPORT, "%08x->%08x| %s", LR, PC, SHIFTJISToUTF8(report_message).c_str());
+}
 
-			case 'f':
-			{
-				result += StringFromFormat(ArgumentBuffer.c_str(), rPS0(FloatingParameterCounter));
-				FloatingParameterCounter++;
-				ParameterCounter--;
-				break;
-			}
+// Log fprintf message
+//  -> int fprintf(FILE* stream, const char* format, ...);
+void HLE_LogFPrint()
+{
+  HLE_LogFPrint(ParameterType::ParameterList);
+}
 
-			case 'p':
-				// Override, so 64bit Dolphin prints 32bit pointers, since the ppc is 32bit :)
-				result += StringFromFormat("%x", (u32)Parameter);
-				break;
+// Log vfprintf message
+//  -> int vfprintf(FILE* stream, const char* format, va_list ap);
+void HLE_LogVFPrint()
+{
+  HLE_LogFPrint(ParameterType::VariableArgumentList);
+}
 
-			case 'n':
-				PowerPC::HostWrite_U32(static_cast<u32>(result.size()), static_cast<u32>(Parameter));
-				// %n doesn't output anything, so the result variable is untouched
-				break;
+std::string GetStringVA(u32 str_reg, ParameterType parameter_type)
+{
+  std::string ArgumentBuffer;
+  std::string result;
+  std::string string = PowerPC::HostGetString(GPR(str_reg));
+  auto ap = parameter_type == ParameterType::VariableArgumentList ?
+                std::make_unique<HLE::SystemVABI::VAListStruct>(GPR(str_reg + 1)) :
+                std::make_unique<HLE::SystemVABI::VAList>(GPR(1) + 0x8, str_reg + 1);
 
-			default:
-				result += StringFromFormat(ArgumentBuffer.c_str(), Parameter);
-				break;
-			}
-		}
-		else
-		{
-			result += string[i];
-		}
-	}
+  for (size_t i = 0; i < string.size(); i++)
+  {
+    if (string[i] == '%')
+    {
+      ArgumentBuffer = '%';
+      i++;
+      if (string[i] == '%')
+      {
+        result += '%';
+        continue;
+      }
 
-	return result;
+      while (i < string.size() &&
+             (string[i] < 'A' || string[i] > 'z' || string[i] == 'l' || string[i] == '-'))
+      {
+        ArgumentBuffer += string[i++];
+      }
+      if (i >= string.size())
+        break;
+
+      ArgumentBuffer += string[i];
+
+      switch (string[i])
+      {
+      case 's':
+        result += StringFromFormat(ArgumentBuffer.c_str(),
+                                   PowerPC::HostGetString(ap->GetArgT<u32>()).c_str());
+        break;
+
+      case 'a':
+      case 'A':
+      case 'e':
+      case 'E':
+      case 'f':
+      case 'F':
+      case 'g':
+      case 'G':
+        result += StringFromFormat(ArgumentBuffer.c_str(), ap->GetArgT<double>());
+        break;
+
+      case 'p':
+        // Override, so 64bit Dolphin prints 32bit pointers, since the ppc is 32bit :)
+        result += StringFromFormat("%x", ap->GetArgT<u32>());
+        break;
+
+      case 'n':
+        // %n doesn't output anything, so the result variable is untouched
+        PowerPC::HostWrite_U32(static_cast<u32>(result.size()), ap->GetArgT<u32>());
+        break;
+
+      default:
+        if (string[i - 1] == 'l' && string[i - 2] == 'l')
+          result += StringFromFormat(ArgumentBuffer.c_str(), ap->GetArgT<u64>());
+        else
+          result += StringFromFormat(ArgumentBuffer.c_str(), ap->GetArgT<u32>());
+        break;
+      }
+    }
+    else
+    {
+      result += string[i];
+    }
+  }
+
+  return result;
 }
 
 }  // end of namespace HLE_OS

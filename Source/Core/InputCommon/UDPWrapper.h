@@ -4,7 +4,8 @@
 
 #include "Common/Common.h"
 #include "Common/IniFile.h"
-#include "InputCommon/ControllerEmu.h"
+#include "InputCommon/ControllerEmu/ControlGroup/ControlGroup.h"
+#include "InputCommon/ControllerEmu/ControllerEmu.h"
 #include "InputCommon/UDPWiimote.h"
 
 class UDPWrapper : public ControllerEmu::ControlGroup

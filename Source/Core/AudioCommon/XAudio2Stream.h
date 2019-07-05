@@ -1,4 +1,4 @@
-// Copyright 2009 Dolphin Emulator Project
+// Copyright 2008 Dolphin Emulator Project
 // Licensed under GPLv2+
 // Refer to the license.txt file included.
 
@@ -15,64 +15,53 @@
 
 #ifdef _WIN32
 
+#include <windows.h>
+
 struct StreamingVoiceContext;
 struct IXAudio2;
 struct IXAudio2MasteringVoice;
 
 #endif
 
-class XAudio2 final: public SoundStream
+class XAudio2 final : public SoundStream
 {
 #ifdef _WIN32
-protected:
-	virtual void InitializeSoundLoop() override;
-	virtual u32 SamplesNeeded() override;
-	virtual void WriteSamples(s16 *src, u32 numsamples) override;
-	virtual bool SupportSurroundOutput() override;
+
 private:
-	class Releaser
-	{
-	public:
-		template <typename R>
-		void operator()(R* ptr)
-		{
-			ptr->Release();
-		}
-	};
+  class Releaser
+  {
+  public:
+    template <typename R>
+    void operator()(R* ptr)
+    {
+      ptr->Release();
+    }
+  };
 
-	std::unique_ptr<IXAudio2, Releaser> m_xaudio2;
-	std::unique_ptr<StreamingVoiceContext> m_voice_context;
-	IXAudio2MasteringVoice *m_mastering_voice;
-	float m_volume;
+  std::unique_ptr<IXAudio2, Releaser> m_xaudio2;
+  std::unique_ptr<StreamingVoiceContext> m_voice_context;
+  IXAudio2MasteringVoice* m_mastering_voice;
 
-	const bool m_cleanup_com;
+  Common::Event m_sound_sync_event;
+  float m_volume;
 
-	static HMODULE m_xaudio2_dll;
-	static void *PXAudio2Create;
+  const bool m_cleanup_com;
 
-	static bool InitLibrary();
-	u32 samplesize;
-public:
-	XAudio2();
-	virtual ~XAudio2();
+  static HMODULE m_xaudio2_dll;
+  static void* PXAudio2Create;
 
-	virtual bool Start();
-	virtual void Stop();
-
-	virtual void Update();
-	virtual void Clear(bool mute);
-	virtual void SetVolume(int volume);
-
-	static bool isValid()
-	{
-		return InitLibrary();
-	}
-
-#else
+  static bool InitLibrary();
+  void Stop();
 
 public:
-	XAudio2()
-	{}
+  XAudio2();
+  ~XAudio2() override;
 
+  bool Init() override;
+
+  bool SetRunning(bool running) override;
+  void SetVolume(int volume) override;
+
+  static bool isValid() { return InitLibrary(); }
 #endif
 };

@@ -20,75 +20,79 @@
 
 namespace OGL
 {
-
-NativeVertexFormat* VertexManager::CreateNativeVertexFormat(const PortableVertexDeclaration &_vtx_decl)
+std::unique_ptr<NativeVertexFormat>
+VertexManager::CreateNativeVertexFormat(const PortableVertexDeclaration& _vtx_decl)
 {
-	return new GLVertexFormat(_vtx_decl);
+  return std::make_unique<GLVertexFormat>(_vtx_decl);
 }
 
 GLVertexFormat::~GLVertexFormat()
 {
-	glDeleteVertexArrays(1, &VAO);
+  glDeleteVertexArrays(1, &VAO);
 }
 
 static inline GLuint VarToGL(EVTXComponentFormat t)
 {
-	static const GLuint lookup[5] = {
-		GL_UNSIGNED_BYTE, GL_BYTE, GL_UNSIGNED_SHORT, GL_SHORT, GL_FLOAT
-	};
-	return lookup[t];
+  static const GLuint lookup[5] = {GL_UNSIGNED_BYTE, GL_BYTE, GL_UNSIGNED_SHORT, GL_SHORT,
+                                   GL_FLOAT};
+  return lookup[t];
 }
 
-static void SetPointer(u32 attrib, u32 stride, const AttributeFormat &format)
+static void SetPointer(u32 attrib, u32 stride, const AttributeFormat& format)
 {
-	if (!format.enable)
-		return;
+  if (!format.enable)
+    return;
 
-	glEnableVertexAttribArray(attrib);
-	glVertexAttribPointer(attrib, format.components, VarToGL(format.type), true, stride, (u8*)nullptr + format.offset);
+  glEnableVertexAttribArray(attrib);
+  glVertexAttribPointer(attrib, format.components, VarToGL(format.type), true, stride,
+                        (u8*)nullptr + format.offset);
 }
 
-GLVertexFormat::GLVertexFormat(const PortableVertexDeclaration &_vtx_decl)
+GLVertexFormat::GLVertexFormat(const PortableVertexDeclaration& _vtx_decl)
 {
-	vtx_decl = _vtx_decl;
+  vtx_decl = _vtx_decl;
 
-	// We will not allow vertex components causing uneven strides.
-	if (vtx_decl.stride & 3)
-		PanicAlert("Uneven vertex stride: %i", vtx_decl.stride);
-	VAO = 0;
+  // We will not allow vertex components causing uneven strides.
+  if (vtx_decl.stride & 3)
+    PanicAlert("Uneven vertex stride: %i", vtx_decl.stride);
+  
 }
 
-void GLVertexFormat::SetupVertexPointers()
+void GLVertexFormat::SetFormat()
 {
-	if (!VAO)
-	{
-		VertexManager* const vm = static_cast<VertexManager*>(g_vertex_manager.get());
+  if (initialized)
+  {
+    return;
+  }
+  initialized = true;
+  VertexManager* const vm = static_cast<VertexManager*>(g_vertex_manager.get());
 
-		glGenVertexArrays(1, &VAO);
-		glBindVertexArray(VAO);
+  glGenVertexArrays(1, &VAO);
+  glBindVertexArray(VAO);
+  ProgramShaderCache::BindVertexFormat(this);
 
-		// the element buffer is bound directly to the vao, so we must it set for every vao
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vm->m_index_buffers);
-		glBindBuffer(GL_ARRAY_BUFFER, vm->m_vertex_buffers);
+  // the element buffer is bound directly to the vao, so we must it set for every vao
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vm->GetIndexBufferHandle());
+  glBindBuffer(GL_ARRAY_BUFFER, vm->GetVertexBufferHandle());
 
-		SetPointer(SHADER_POSITION_ATTRIB, vtx_decl.stride, vtx_decl.position);
+  SetPointer(SHADER_POSITION_ATTRIB, vtx_decl.stride, vtx_decl.position);
 
-		for (int i = 0; i < 3; i++)
-			SetPointer(SHADER_NORM0_ATTRIB + i, vtx_decl.stride, vtx_decl.normals[i]);
+  for (int i = 0; i < 3; i++)
+    SetPointer(SHADER_NORM0_ATTRIB + i, vtx_decl.stride, vtx_decl.normals[i]);
 
-		for (int i = 0; i < 2; i++)
-			SetPointer(SHADER_COLOR0_ATTRIB + i, vtx_decl.stride, vtx_decl.colors[i]);
+  for (int i = 0; i < 2; i++)
+    SetPointer(SHADER_COLOR0_ATTRIB + i, vtx_decl.stride, vtx_decl.colors[i]);
 
-		for (int i = 0; i < 8; i++)
-			SetPointer(SHADER_TEXTURE0_ATTRIB + i, vtx_decl.stride, vtx_decl.texcoords[i]);
+  for (int i = 0; i < 8; i++)
+    SetPointer(SHADER_TEXTURE0_ATTRIB + i, vtx_decl.stride, vtx_decl.texcoords[i]);
 
-		if (vtx_decl.posmtx.enable)
-		{
-			glEnableVertexAttribArray(SHADER_POSMTX_ATTRIB);
-			glVertexAttribIPointer(SHADER_POSMTX_ATTRIB, 4, GL_UNSIGNED_BYTE, vtx_decl.stride, (u8*)NULL + vtx_decl.posmtx.offset);
-		}
-		vm->m_last_vao = VAO;
-	}
+  
+  if (vtx_decl.posmtx.enable)
+  {
+    glEnableVertexAttribArray(SHADER_POSMTX_ATTRIB);
+    glVertexAttribIPointer(SHADER_POSMTX_ATTRIB, 4, GL_UNSIGNED_BYTE, vtx_decl.stride,
+                           (u8*)NULL + vtx_decl.posmtx.offset);
+  }
 }
 
-}
+}  // namespace OGL

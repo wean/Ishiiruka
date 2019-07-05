@@ -6,7 +6,7 @@
 
 #include <d3d11_2.h>
 #include <d3dcompiler.h>
-#include <dxgi.h>
+#include <dxgi1_5.h>
 #include <vector>
 
 #include "Common/Common.h"
@@ -64,7 +64,7 @@ DXGI_FORMAT GetBaseBufferFormat();
 bool BGRATexturesSupported();
 bool BGRA565TexturesSupported();
 
-unsigned int GetMaxTextureSize();
+u32 GetMaxTextureSize(D3D_FEATURE_LEVEL feature_level);
 bool SupportPartialContantBufferUpdate();
 
 HRESULT SetFullscreenState(bool enable_fullscreen);
@@ -76,10 +76,10 @@ bool GetFullscreenState();
 template <typename T>
 void SetDebugObjectName(T resource, const char* name)
 {
-	static_assert(std::is_convertible<T, ID3D11DeviceChild*>::value,
-		"resource must be convertible to ID3D11DeviceChild*");
+  static_assert(std::is_convertible<T, ID3D11DeviceChild*>::value,
+    "resource must be convertible to ID3D11DeviceChild*");
 #if defined(_DEBUG) || defined(DEBUGFAST)
-	if (name && resource) resource->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)strlen(name), name);
+  if (name && resource) resource->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)strlen(name), name);
 #endif
 }
 

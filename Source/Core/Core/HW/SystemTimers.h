@@ -30,13 +30,20 @@ broadway:                       729
 
 enum
 {
-	TIMER_RATIO = 12
+  TIMER_RATIO = 12
+};
+
+enum class Mode
+{
+  GC,
+  Wii,
 };
 
 u32 GetTicksPerSecond();
 void PreInit();
 void Init();
 void Shutdown();
+void ChangePPCClock(Mode mode);
 
 // Notify timing system that somebody wrote to the decrementer
 void DecrementerSet();

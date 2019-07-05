@@ -4,8 +4,10 @@ set(SRCS
 	FramebufferManager.cpp
 	ObjectCache.cpp
 	PerfQuery.cpp
+	PostProcessing.cpp
 	RasterFont.cpp
 	Renderer.cpp
+	ShaderCache.cpp
 	ShaderCompiler.cpp
 	StateTracker.cpp
 	StagingBuffer.cpp
@@ -20,6 +22,7 @@ set(SRCS
 	VertexManager.cpp
 	VulkanContext.cpp
 	VulkanLoader.cpp
+	VKTexture.cpp
 	main.cpp
 )
 
@@ -37,5 +40,5 @@ include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/Externals/glslang/SPIRV)
 
 # Link against glslang, the other necessary libraries are referenced by the executable.
 add_dolphin_library(videovulkan "${SRCS}" "${LIBS}")
-target_link_libraries(videovulkan glslang)
+target_link_libraries(videovulkan PRIVATE glslang)
 

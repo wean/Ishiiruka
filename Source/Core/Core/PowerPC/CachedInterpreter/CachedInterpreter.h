@@ -14,52 +14,30 @@
 class CachedInterpreter : public JitBase
 {
 public:
-	CachedInterpreter() : code_buffer(32000) {}
-	~CachedInterpreter() {}
-	void Init() override;
-	void Shutdown() override;
+  CachedInterpreter();
+  ~CachedInterpreter();
 
-	bool HandleFault(uintptr_t access_address, SContext* ctx) override { return false; }
-	void ClearCache() override;
+  void Init() override;
+  void Shutdown() override;
 
-	void Run() override;
-	void SingleStep() override;
+  bool HandleFault(uintptr_t access_address, SContext* ctx) override { return false; }
+  void ClearCache() override;
 
-	void Jit(u32 address) override;
+  void Run() override;
+  void SingleStep() override;
 
-	JitBaseBlockCache* GetBlockCache() override { return &m_block_cache; }
-	const char* GetName() override { return "Cached Interpreter"; }
-	const CommonAsmRoutinesBase* GetAsmRoutines() override { return nullptr; }
+  void Jit(u32 address) override;
+
+  JitBaseBlockCache* GetBlockCache() override { return &m_block_cache; }
+  const char* GetName() const override { return "Cached Interpreter"; }
+  const CommonAsmRoutinesBase* GetAsmRoutines() override { return nullptr; }
 private:
-	struct Instruction
-	{
-		typedef void(*CommonCallback)(UGeckoInstruction);
-		typedef bool(*ConditionalCallback)(u32 data);
+  struct Instruction;
 
-		Instruction() : type(INSTRUCTION_ABORT){};
-		Instruction(const CommonCallback c, UGeckoInstruction i)
-			: common_callback(c), data(i.hex), type(INSTRUCTION_TYPE_COMMON){};
-		Instruction(const ConditionalCallback c, u32 d)
-			: conditional_callback(c), data(d), type(INSTRUCTION_TYPE_CONDITIONAL){};
+  const u8* GetCodePtr() const;
+  void ExecuteOneBlock();
 
-		union
-		{
-			const CommonCallback common_callback;
-			const ConditionalCallback conditional_callback;
-		};
-		u32 data;
-		enum
-		{
-			INSTRUCTION_ABORT,
-			INSTRUCTION_TYPE_COMMON,
-			INSTRUCTION_TYPE_CONDITIONAL,
-		} type;
-	};
-
-	const u8* GetCodePtr() { return (u8*)(m_code.data() + m_code.size()); }
-	void ExecuteOneBlock();
-
-	BlockCache m_block_cache{ *this };
-	std::vector<Instruction> m_code;
-	PPCAnalyst::CodeBuffer code_buffer;
+  BlockCache m_block_cache{*this};
+  std::vector<Instruction> m_code;
+  PPCAnalyst::CodeBuffer code_buffer;
 };

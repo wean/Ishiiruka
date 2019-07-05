@@ -13,7 +13,7 @@ static const std::string DefaultPort(const int index)
 }
 
 UDPWrapper::UDPWrapper(int indx, const char* const _name) :
-	ControllerEmu::ControlGroup(_name, GROUP_TYPE_UDPWII),
+	ControllerEmu::ControlGroup(_name, ControllerEmu::GroupType::UDPWii),
 	inst(nullptr), index(indx),
 	updIR(false), updAccel(false),
 	updButt(false), udpEn(false)

@@ -6,9 +6,11 @@
 
 #include "DolphinWX/Input/InputConfigDiag.h"
 
+class wxComboBox;
+
 class DrumsInputConfigDialog final : public InputConfigDialog
 {
 public:
-	DrumsInputConfigDialog(wxWindow* parent, InputConfig& config, const wxString& name,
-		int port_num = 0);
+  DrumsInputConfigDialog(wxWindow* parent, InputConfig& config, const wxString& name,
+                         wxComboBox* device_cbox_parent, int port_num = 0);
 };

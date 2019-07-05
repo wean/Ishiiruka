@@ -7,7 +7,6 @@
 #include <memory>
 #include <wx/panel.h>
 
-class GameListItem;
 class wxButton;
 class wxChoice;
 class wxStaticBitmap;
@@ -16,73 +15,63 @@ class wxTextCtrl;
 
 namespace DiscIO
 {
-class IVolume;
 enum class Language;
+class Volume;
+}
+
+namespace UICommon
+{
+class GameFile;
 }
 
 class InfoPanel final : public wxPanel
 {
 public:
-	InfoPanel(wxWindow* parent, wxWindowID id, const GameListItem& item,
-		const std::unique_ptr<DiscIO::IVolume>& opened_iso);
+  InfoPanel(wxWindow* parent, wxWindowID id, const UICommon::GameFile& item,
+    const std::unique_ptr<DiscIO::Volume>& opened_iso);
 
 private:
-	enum
-	{
-		ID_NAME = 10000,
-		ID_GAME_ID,
-		ID_COUNTRY,
-		ID_MAKER_ID,
-		ID_REVISION,
-		ID_DATE,
-		ID_FST,
-		ID_MD5_SUM,
-		ID_MD5_SUM_COMPUTE,
-		ID_VERSION,
-		ID_LANGUAGE,
-		ID_SHORT_NAME,
-		ID_MAKER,
-		ID_COMMENT,
-		ID_BANNER,
+  enum
+  {
+    IDM_SAVE_BANNER
+  };
 
-		IDM_SAVE_BANNER
-	};
+  void CreateGUI();
+  void BindEvents();
+  void LoadGUIData();
+  void LoadISODetails();
+  void LoadBannerDetails();
+  wxImage ConvertBannerImage();
+  void LoadBannerImage();
 
-	void CreateGUI();
-	void BindEvents();
-	void LoadGUIData();
-	void LoadISODetails();
-	void LoadBannerDetails();
-	void LoadBannerImage();
+  wxStaticBoxSizer* CreateISODetailsSizer();
+  wxStaticBoxSizer* CreateBannerDetailsSizer();
+  wxChoice* CreateCommentLanguageChoice();
 
-	wxStaticBoxSizer* CreateISODetailsSizer();
-	wxStaticBoxSizer* CreateBannerDetailsSizer();
-	wxChoice* CreateCommentLanguageChoice();
+  void OnComputeMD5(wxCommandEvent&);
+  void OnChangeBannerLanguage(wxCommandEvent&);
+  void OnRightClickBanner(wxMouseEvent&);
+  void OnSaveBannerImage(wxCommandEvent&);
 
-	void OnComputeMD5(wxCommandEvent&);
-	void OnChangeBannerLanguage(wxCommandEvent&);
-	void OnRightClickBanner(wxMouseEvent&);
-	void OnSaveBannerImage(wxCommandEvent&);
+  void ChangeBannerDetails(DiscIO::Language language);
 
-	void ChangeBannerDetails(DiscIO::Language language);
+  void EmitTitleChangeEvent(const wxString& new_title);
 
-	void EmitTitleChangeEvent(const wxString& new_title);
+  const UICommon::GameFile& m_game_list_item;
+  const std::unique_ptr<DiscIO::Volume>& m_opened_iso;
 
-	const GameListItem& m_game_list_item;
-	const std::unique_ptr<DiscIO::IVolume>& m_opened_iso;
-
-	wxTextCtrl* m_internal_name;
-	wxTextCtrl* m_game_id;
-	wxTextCtrl* m_country;
-	wxTextCtrl* m_maker_id;
-	wxTextCtrl* m_revision;
-	wxTextCtrl* m_date;
-	wxTextCtrl* m_fst;
-	wxTextCtrl* m_md5_sum;
-	wxButton* m_md5_sum_compute;
-	wxChoice* m_languages;
-	wxTextCtrl* m_name;
-	wxTextCtrl* m_maker;
-	wxTextCtrl* m_comment;
-	wxStaticBitmap* m_banner;
+  wxTextCtrl* m_internal_name;
+  wxTextCtrl* m_game_id;
+  wxTextCtrl* m_country;
+  wxTextCtrl* m_maker_id;
+  wxTextCtrl* m_revision;
+  wxTextCtrl* m_date;
+  wxTextCtrl* m_ios_version = nullptr;
+  wxTextCtrl* m_md5_sum;
+  wxButton* m_md5_sum_compute;
+  wxChoice* m_languages;
+  wxTextCtrl* m_name;
+  wxTextCtrl* m_maker;
+  wxTextCtrl* m_comment;
+  wxStaticBitmap* m_banner;
 };
