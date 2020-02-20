@@ -1512,7 +1512,7 @@ inline void GeneratePixelShader(ShaderCode& out, const pixel_shader_uid_data& ui
   {
     out.Write(headerLightUtil);
   }
-  if (enablesimbumps)
+  if (enablesimbumps || uid_data.dither)
   {
     out.Write(headerBumpUtil);
   }
@@ -1638,12 +1638,8 @@ inline void GeneratePixelShader(ShaderCode& out, const pixel_shader_uid_data& ui
   if (uid_data.dither)
   {
     out.Write("wu GetDitherValue(wu2 ditherindex)\n{\n");
-    if (uid_data.rgba6_format)
-      out.Write("\twu4 bayer[4] = {wu4(-8,0,-6,2),wu4(4,-4,6,-2),wu4(-5,3,-7,1),wu4(7,-1,5,-3)};\n");
-    else
-      out.Write("\tint4 bayer[4] = {wu4(-2,0,1,-1),wu4(-1,1,-2,0),wu4(1,3,-1,-2),wu4(0,-1,2,1)};\n");
-    out.Write("\treturn bayer[ditherindex.y][ditherindex.x];\n");
-    out.Write("}\n");
+    out.Write("\twu result = round(2*snoise(0.2*float2(ditherindex.x, ditherindex.y)));\n");
+    out.Write("\treturn result;\n}\n");
   }
   if (ApiType == API_OPENGL || ApiType == API_VULKAN)
   {
@@ -1845,17 +1841,6 @@ inline void GeneratePixelShader(ShaderCode& out, const pixel_shader_uid_data& ui
     out.Write("}\n");
     return;
   }
-  if (uid_data.dither)
-  {
-	  if (ApiType & API_D3D9)
-	  {
-		  out.Write("\tfloat2 ditherindex = round(rawpos.xy) %% 4;\n");
-	  }
-	  else
-	  {
-		  out.Write("\tint2 ditherindex = int2(rawpos.xy) & 3;\n");
-	  }
-  }
   out.Write("wu4 c0 = " I_COLORS "[1], c1 = " I_COLORS "[2], c2 = " I_COLORS "[3], prev = " I_COLORS "[0];\n"
     "wu4 tex_ta[%i], tex_t = wu4(0,0,0,0), ras_t = wu4(0,0,0,0), konst_t = wu4(0,0,0,0);\n"
     "wu3 c16 = wu3(1,256,0), c24 = wu3(1,256,256*256);\n"
@@ -1916,6 +1901,18 @@ inline void GeneratePixelShader(ShaderCode& out, const pixel_shader_uid_data& ui
     {
       out.Write("\tuv%d.xy = uv%d.xy / ((uv%d.z == 0.0) ? 2.0 : uv%d.z);\n", i, i, i, i);
       out.Write("uv%d.xy = trunc(uv%d.xy * " I_TEXDIMS"[%d].zw);\n", i, i, i);
+    }
+  }
+
+  if (uid_data.dither)
+  {
+    if (ApiType & API_D3D9)
+    {
+      out.Write("\tfloat2 ditherindex = round(rawpos.xy);\n");
+    }
+    else
+    {
+      out.Write("\tint2 ditherindex = int2(rawpos.xy);\n");
     }
   }
 
@@ -1993,7 +1990,7 @@ inline void GeneratePixelShader(ShaderCode& out, const pixel_shader_uid_data& ui
     if (enablesimbumps)
     {
       out.Write(
-        "if(" I_PPHONG "[1].x > 0.0 && height_map_count > 0)\n"
+        "if(" I_PPHONG "[1].x > 0.0 && height_map_count > 0.0)\n"
         "{\n"
         "height_map = lerp(height_map * " I_PPHONG "[1].y, snoise(mapcoord * mapsize * " I_PPHONG "[1].w), " I_PPHONG "[1].z) * " I_PPHONG "[1].x;\n"
         "_norm0 = CalculateSurfaceNormal(pos, _norm0, height_map);"
@@ -2144,7 +2141,7 @@ inline void GeneratePixelShader(ShaderCode& out, const pixel_shader_uid_data& ui
   {
     out.Write(
       // Rim Component
-      "prev.rgb += wu3(clamp(prev.rgb * 2.0 + " I_PPHONG "[0].xxx, 127.0,255.0)*spec.w*" I_PPHONG "[0].z * normalmap.w);\n"
+      "prev.rgb += wu3(clamp(float3(prev.rgb) * 2.0 + " I_PPHONG "[0].xxx, 127.0,255.0)*spec.w*" I_PPHONG "[0].z * normalmap.w);\n"
       // Specular component
       "prev.rgb += wu3(spec.rgb * normalmap.w * " I_PPHONG "[0].w);\n"
     );
@@ -2158,14 +2155,14 @@ inline void GeneratePixelShader(ShaderCode& out, const pixel_shader_uid_data& ui
     out.Write("}\n");
   }
 
-  if (uid_data.dither)
-  {
-    out.Write("\tprev.rgb += GetDitherValue(ditherindex);\n");
-  }
-
   if (uid_data.rgba6_format)
   {
     out.Write("\tprev = CAST_TO_U6(clamp(prev, 0, 255));\n");
+  }
+
+  if (uid_data.dither)
+  {
+    out.Write("\tprev.rgb += GetDitherValue(ditherindex);\n");
   }
 
   // Use dual-source color blending to perform dst alpha in a single pass
